@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ISRAMASTER - האתגר היומי</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #1a2a6c;
+            --accent: #f44336;
+            --gold: #ffeb3b;
+            --success: #2ecc71;
+            --dark: #2c3e50;
+            --sidebar-width: 400px;
+        }
+
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; background: #eee; }
+        body { display: flex; flex-direction: row; }
+
+        #sidebar { 
+            width: var(--sidebar-width); height: 100vh; background: var(--dark); 
+            box-shadow: 5px 0 15px rgba(0,0,0,0.2); padding: 30px; 
+            box-sizing: border-box; z-index: 1001; overflow-y: auto; 
+            display: flex; flex-direction: column; color: white;
+            transition: transform 0.3s ease-out;
+        }
+
+        #map { flex: 1; height: 100vh; background: #cad7d0; z-index: 1; }
+
+        #mobile-toggle {
+            display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 2005; background: var(--dark); color: white; border: 2px solid var(--accent);
+            padding: 12px 35px; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .swipe-handle {
+            display: none; width: 50px; height: 6px; background: rgba(255,255,255,0.3);
+            border-radius: 10px; margin: -15px auto 15px auto; padding: 10px 0; background-clip: content-box;
+        }
+
+        /* LOCKED LABEL & DOT CSS */
+        .custom-marker {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: none !important;
+            border: none !important;
+        }
+        .marker-dot {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+        }
+        .marker-label {
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 5px;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        #setup-overlay, #how-to-play-overlay, #victory-overlay { 
+            position: fixed; inset: 0; z-index: 3000; display: flex; 
+            flex-direction: column; justify-content: center; align-items: center; 
+            color: white; text-align: center; backdrop-filter: blur(5px);
+        }
+        #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
+        #how-to-play-overlay { background: rgba(0,0,0,0.9); display: none; }
+        .game-logo { font-size: clamp(40px, 10vw, 80px); font-weight: 900; letter-spacing: 8px; margin-bottom: 5px; background: linear-gradient(to bottom, #fff, #bdc3c7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stats-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 20px; border-radius: 20px; margin-bottom: 25px; text-align: center; }
+        .life-container { display: flex; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .life-circle { width: 14px; height: 14px; background: var(--gold); border-radius: 50%; box-shadow: 0 0 10px var(--gold); transition: 0.4s; }
+        .life-circle.lost { background: rgba(255,255,255,0.1); box-shadow: none; transform: scale(0.7); }
+        .btn-main { padding: 16px; background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 18px; width: 100%; margin-top: 10px; }
+        .btn-secondary { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; }
+        input { padding:18px; border-radius:15px; border:1px solid transparent; background: rgba(255,255,255,0.15); font-size: 17px; color: white; width: 100%; box-sizing: border-box; outline: none; }
+        #feedback { margin-top: 20px; flex: 1; padding-bottom: 40px; }
+        .guess-row { padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; margin-bottom: 8px; color: #000; font-size: 14px; }
+        .modal { background: white; padding: 30px; border-radius: 25px; width: 85%; max-width: 400px; color: #333; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
+        .stat-val { font-size: 20px; font-weight: 900; color: var(--primary); display: block; }
+        .stat-lbl { font-size: 11px; color: #777; }
+
+        @media (max-width: 850px) {
+            #sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70vh; transform: translateY(100%); border-radius: 30px 30px 0 0; z-index: 2100; transition: transform 0.1s linear; }
+            #sidebar.open { transform: translateY(0); }
+            #sidebar.transitioning { transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1); }
+            .swipe-handle { display: block; }
+            #mobile-toggle { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="setup-overlay">
+    <div class="game-logo">ISRAMASTER</div>
+    <p style="margin-bottom: 30px; font-size: 18px; opacity: 0.9;">האתגר הגיאוגרפי היומי של ישראל</p>
+    <div style="display:flex; flex-direction:column; gap:10px; width: 260px;">
+        <button class="btn-main" onclick="startGame()">התחילו אתגר 🛰️</button>
+        <button class="btn-main btn-secondary" onclick="toggleInstructions(true)">איך משחקים? 📖</button>
+    </div>
+</div>
+
+<div id="how-to-play-overlay">
+    <div class="modal">
+        <h2 style="margin-top:0">איך משחקים?</h2>
+        <ul style="text-align: right; line-height: 1.6; padding-right: 20px;">
+            <li>עליכם לנחש בדיוק את <b>שם היישוב המסתורי</b>.</li>
+            <li>בכל ניחוש תקבלו מרחק וכיוון ליעד.</li>
+            <li>רק ניחוש של השם המדויק יזכה אתכם בניצחון!</li>
+        </ul>
+        <button class="btn-main" onclick="toggleInstructions(false)">הבנתי!</button>
+    </div>
+</div>
+
+<button id="mobile-toggle" onclick="toggleSidebar(true)">ניחושים 📊</button>
+
+<div id="sidebar">
+    <div class="swipe-handle" id="swipeHandle"></div>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="margin:0; font-size: 24px; letter-spacing: 2px;">ISRAMASTER</h2>
+    </div>
+    <div class="stats-card">
+        <div style="font-size: 11px; opacity: 0.7; margin-bottom: 5px;">ניסיונות נותרים</div>
+        <div class="life-container" id="lifePoints"></div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+        <input type="text" id="cityInput" placeholder="הקלד שם יישוב..." list="cityList" onkeypress="if(event.key === 'Enter') makeGuess()">
+        <datalist id="cityList"></datalist>
+        <button id="submitBtn" class="btn-main" onclick="makeGuess()">ניחוש 🚀</button>
+        <button id="giveUpBtn" class="btn-main btn-secondary" onclick="giveUp()">ויתור 🏳️</button>
+    </div>
+    <div id="feedback"></div>
+</div>
+
+<div id="map"></div>
+
+<div id="victory-overlay" style="display:none;">
+    <div class="modal">
+        <h2 id="vic-title"></h2>
+        <p id="vic-msg"></p>
+        <div class="stats-grid">
+            <div class="stat-item"><span class="stat-val" id="st-played">0</span><span class="stat-lbl">משחקים</span></div>
+            <div class="stat-item"><span class="stat-val" id="st-winpct">0%</span><span class="stat-lbl">ניצחונות</span></div>
+            <div class="stat-item"><span class="stat-val" id="st-streak">0</span><span class="stat-lbl">רצף</span></div>
+            <div class="stat-item"><span class="stat-val" id="st-avg">0</span><span class="stat-lbl">ממוצע</span></div>
+        </div>
+        <button class="btn-main" style="background: var(--dark);" onclick="hideOverlay()">חזרה למפה 🗺️</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let allCities = [];
+let target;
+let attempts = 10;
+let isGameOver = false;
+
+// SWIPE LOGIC
+let touchStartY = 0;
+let currentTranslateY = 0;
+const sidebar = document.getElementById('sidebar');
+
+sidebar.addEventListener('touchstart', e => {
+    if (sidebar.scrollTop <= 0) {
+        touchStartY = e.touches[0].clientY;
+        sidebar.classList.remove('transitioning');
+    }
+}, {passive: true});
+
+sidebar.addEventListener('touchmove', e => {
+    if (sidebar.scrollTop <= 0) {
+        const touchY = e.touches[0].clientY;
+        const diff = touchY - touchStartY;
+        if (diff > 0 && sidebar.classList.contains('open')) {
+            sidebar.style.transform = `translateY(${diff}px)`;
+            currentTranslateY = diff;
+        }
+    }
+}, {passive: true});
+
+sidebar.addEventListener('touchend', () => {
+    sidebar.classList.add('transitioning');
+    if (currentTranslateY > 150) {
+        toggleSidebar(false);
+    } else {
+        sidebar.style.transform = '';
+    }
+    currentTranslateY = 0;
+});
+
+const map = L.map('map', { zoomControl: false }).setView([31.5, 34.8], 8);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+
+function toggleInstructions(show) { document.getElementById('how-to-play-overlay').style.display = show ? 'flex' : 'none'; }
+
+function toggleSidebar(forceOpen) {
+    sidebar.classList.add('transitioning');
+    sidebar.style.transform = '';
+    if (forceOpen === true) sidebar.classList.add('open');
+    else if (forceOpen === false) sidebar.classList.remove('open');
+    else sidebar.classList.toggle('open');
+}
+
+function getDailyKey() {
+    const d = new Date();
+    // V3 Salt to reset today's seed again
+    return `v3-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+async function loadData() {
+    try {
+        const response = await fetch('MapIsrael.geojson');
+        const data = await response.json();
+        allCities = data.features.map(f => ({
+            name: (f.properties["name:he"] || f.properties["name"] || "").trim(),
+            lat: f.geometry.coordinates[1],
+            lon: f.geometry.coordinates[0]
+        })).filter(c => c.name !== "");
+
+        const container = document.getElementById('lifePoints');
+        container.innerHTML = '';
+        for(let i=0; i<10; i++) {
+            const div = document.createElement('div');
+            div.className = 'life-circle';
+            div.id = `life-${i}`;
+            container.appendChild(div);
+        }
+
+        const seedStr = getDailyKey();
+        let hash = 0;
+        for (let i = 0; i < seedStr.length; i++) {
+            hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+            hash |= 0;
+        }
+        const seededRandom = Math.abs(Math.sin(hash));
+        target = allCities[Math.floor(seededRandom * allCities.length)];
+        
+        const dl = document.getElementById('cityList');
+        [...new Set(allCities.map(c => c.name))].sort().forEach(name => {
+            let o = document.createElement('option'); o.value = name; dl.appendChild(o);
+        });
+
+        restoreGameState();
+    } catch (e) { console.error("Error loading data", e); }
+}
+
+function restoreGameState() {
+    const stats = JSON.parse(localStorage.getItem('israeleStats')) || {};
+    const today = getDailyKey();
+    if (stats.lastPlayedDate === today && stats.guessesToday) {
+        document.getElementById('setup-overlay').style.display = 'none';
+        stats.guessesToday.forEach(cityName => processGuess(cityName, true));
+        if (stats.isGameOverToday) endGame(stats.lastResultWasWin, stats.lastAttemptsCount, true);
+    }
+}
+
+function startGame() {
+    document.getElementById('setup-overlay').style.opacity = '0';
+    setTimeout(() => document.getElementById('setup-overlay').style.display = 'none', 500);
+}
+
+function makeGuess() {
+    const input = document.getElementById('cityInput');
+    const val = input.value.trim();
+    if (!val || isGameOver) return;
+    processGuess(val);
+    input.value = "";
+}
+
+function processGuess(cityName, isRestoring = false) {
+    let guess = allCities.find(c => c.name === cityName);
+    if (!guess) return;
+
+    attempts--;
+    const lifeCircle = document.getElementById(`life-${attempts}`);
+    if(lifeCircle) lifeCircle.classList.add('lost');
+
+    const dist = calculateDistance(guess.lat, guess.lon, target.lat, target.lon);
+    const bearing = (Math.atan2(target.lon - guess.lon, target.lat - guess.lat) * 180 / Math.PI + 360) % 360;
+    const ratio = Math.pow(Math.min(dist / 150, 1), 0.35);
+    const color = `rgb(255, ${Math.floor(255 * ratio)}, ${Math.floor(100 * ratio)})`;
+
+    // Locked label icon
+    const icon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div class="marker-dot" style="background-color:${color}"></div><div class="marker-label">${guess.name}</div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+    });
+    L.marker([guess.lat, guess.lon], { icon: icon }).addTo(map);
+    
+    const row = document.createElement('div');
+    row.className = 'guess-row';
+    row.style.background = color;
+    row.innerHTML = `<span>${guess.name}</span> <span>${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></span>`;
+    document.getElementById('feedback').prepend(row);
+
+    if (!isRestoring) {
+        saveProgress(cityName);
+        // Fixed: Zooms in to level 13 for better local view
+        map.flyTo([guess.lat, guess.lon], 13);
+        if (window.innerWidth <= 850) toggleSidebar(true);
+    }
+
+    // WIN CONDITION: STRICT NAME MATCH ONLY
+    if (cityName === target.name) endGame(true, attempts, isRestoring);
+    else if (attempts === 0) endGame(false, attempts, isRestoring);
+}
+
+function saveProgress(cityName) {
+    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0 };
+    const today = getDailyKey();
+    if (stats.lastPlayedDate !== today) {
+        stats.lastPlayedDate = today;
+        stats.guessesToday = [];
+        stats.isGameOverToday = false;
+    }
+    stats.guessesToday.push(cityName);
+    localStorage.setItem('israeleStats', JSON.stringify(stats));
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2-lat1)*Math.PI/180;
+    const dLon = (lon2-lon1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function endGame(win, remaining, alreadyProcessed = false) {
+    isGameOver = true;
+    document.getElementById('cityInput').disabled = true;
+    document.getElementById('submitBtn').disabled = true;
+
+    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0 };
+    
+    if (!alreadyProcessed && stats.isGameOverToday !== true) {
+        stats.played = (stats.played || 0) + 1;
+        stats.isGameOverToday = true;
+        stats.lastResultWasWin = win;
+        stats.lastAttemptsCount = remaining;
+        if(win) { 
+            stats.wins = (stats.wins || 0) + 1; 
+            stats.streak = (stats.streak || 0) + 1; 
+            stats.totalGuesses = (stats.totalGuesses || 0) + (10 - remaining); 
+        } else { 
+            stats.streak = 0; 
+        }
+        localStorage.setItem('israeleStats', JSON.stringify(stats));
+    }
+    
+    document.getElementById('st-played').innerText = stats.played || 0;
+    document.getElementById('st-winpct').innerText = stats.played > 0 ? Math.round(((stats.wins || 0) / stats.played) * 100) + "%" : "0%";
+    document.getElementById('st-streak').innerText = stats.streak || 0;
+    document.getElementById('st-avg').innerText = stats.wins > 0 ? ((stats.totalGuesses || 0) / stats.wins).toFixed(1) : "0";
+    
+    document.getElementById('victory-overlay').style.display = 'flex';
+    document.getElementById('vic-title').innerText = win ? "פגיעה בול! 🎯" : "אולי מחר... 🚩";
+    document.getElementById('vic-msg').innerText = `היעד היה: ${target.name}`;
+    
+    L.marker([target.lat, target.lon]).addTo(map).bindPopup(`<b>${target.name}</b>`).openPopup();
+    if (!alreadyProcessed) map.flyTo([target.lat, target.lon], 14);
+}
+
+function hideOverlay() { document.getElementById('victory-overlay').style.display = 'none'; }
+function giveUp() { if(!isGameOver) endGame(false, attempts); }
+window.onload = loadData;
+</script>
+</body>
+</html>
