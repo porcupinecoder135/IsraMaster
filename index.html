@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ISRAMASTER - האתגר היומי</title>
+    
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <meta name="theme-color" content="#1a2a6c">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
@@ -39,7 +44,6 @@
             border-radius: 10px; margin: -15px auto 15px auto; padding: 10px 0; background-clip: content-box;
         }
 
-        /* LOCKED LABEL & DOT CSS */
         .custom-marker {
             display: flex !important;
             flex-direction: column !important;
@@ -93,7 +97,7 @@
         @media (max-width: 850px) {
             #sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70vh; transform: translateY(100%); border-radius: 30px 30px 0 0; z-index: 2100; transition: transform 0.1s linear; }
             #sidebar.open { transform: translateY(0); }
-            #sidebar.transitioning { transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1); }
+            #sidebar.transitioning { transition: transform(0.4s cubic-bezier(0.2, 0, 0, 1)); }
             .swipe-handle { display: block; }
             #mobile-toggle { display: block; }
         }
@@ -213,7 +217,6 @@ function toggleSidebar(forceOpen) {
 
 function getDailyKey() {
     const d = new Date();
-    // V3 Salt to reset today's seed again
     return `v3-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
@@ -290,7 +293,6 @@ function processGuess(cityName, isRestoring = false) {
     const ratio = Math.pow(Math.min(dist / 150, 1), 0.35);
     const color = `rgb(255, ${Math.floor(255 * ratio)}, ${Math.floor(100 * ratio)})`;
 
-    // Locked label icon
     const icon = L.divIcon({
         className: 'custom-marker',
         html: `<div class="marker-dot" style="background-color:${color}"></div><div class="marker-label">${guess.name}</div>`,
@@ -307,12 +309,11 @@ function processGuess(cityName, isRestoring = false) {
 
     if (!isRestoring) {
         saveProgress(cityName);
-        // Fixed: Zooms in to level 13 for better local view
-        map.flyTo([guess.lat, guess.lon], 13);
+        // ZOOM ADJUSTED: Changed from 13 to 11
+        map.flyTo([guess.lat, guess.lon], 11);
         if (window.innerWidth <= 850) toggleSidebar(true);
     }
 
-    // WIN CONDITION: STRICT NAME MATCH ONLY
     if (cityName === target.name) endGame(true, attempts, isRestoring);
     else if (attempts === 0) endGame(false, attempts, isRestoring);
 }
@@ -369,7 +370,9 @@ function endGame(win, remaining, alreadyProcessed = false) {
     document.getElementById('vic-msg').innerText = `היעד היה: ${target.name}`;
     
     L.marker([target.lat, target.lon]).addTo(map).bindPopup(`<b>${target.name}</b>`).openPopup();
-    if (!alreadyProcessed) map.flyTo([target.lat, target.lon], 14);
+    
+    // ZOOM ADJUSTED: Changed from 14 to 12
+    if (!alreadyProcessed) map.flyTo([target.lat, target.lon], 12);
 }
 
 function hideOverlay() { document.getElementById('victory-overlay').style.display = 'none'; }
