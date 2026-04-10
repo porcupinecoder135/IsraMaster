@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ISRAMASTER - האתגר היומי</title>
+    <title>IsraMaster - אתגר גאוגרפיה וידיעת הארץ יומי</title>
     
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="icon" type="image/jpeg" href="favicon.jpg">
+    <link rel="apple-touch-icon" href="favicon.jpg">
+    
     <meta name="theme-color" content="#1a2a6c">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -79,9 +80,9 @@
         }
         #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
         #how-to-play-overlay { background: rgba(0,0,0,0.9); display: none; }
-        .game-logo { font-size: clamp(40px, 10vw, 80px); font-weight: 900; letter-spacing: 8px; margin-bottom: 5px; background: linear-gradient(to bottom, #fff, #bdc3c7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .game-logo { font-size: clamp(30px, 8vw, 60px); font-weight: 900; letter-spacing: 2px; margin-bottom: 5px; background: linear-gradient(to bottom, #fff, #bdc3c7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .stats-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 20px; border-radius: 20px; margin-bottom: 25px; text-align: center; }
-        .life-container { display: flex; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .life-container { display: flex; justify: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
         .life-circle { width: 14px; height: 14px; background: var(--gold); border-radius: 50%; box-shadow: 0 0 10px var(--gold); transition: 0.4s; }
         .life-circle.lost { background: rgba(255,255,255,0.1); box-shadow: none; transform: scale(0.7); }
         .btn-main { padding: 16px; background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 18px; width: 100%; margin-top: 10px; }
@@ -106,8 +107,8 @@
 <body>
 
 <div id="setup-overlay">
-    <div class="game-logo">ISRAMASTER</div>
-    <p style="margin-bottom: 30px; font-size: 18px; opacity: 0.9;">האתגר הגיאוגרפי היומי של ישראל</p>
+    <div class="game-logo">IsraMaster</div>
+    <p style="margin-bottom: 30px; font-size: 18px; opacity: 0.9;">אתגר גאוגרפיה וידיעת הארץ יומי</p>
     <div style="display:flex; flex-direction:column; gap:10px; width: 260px;">
         <button class="btn-main" onclick="startGame()">התחילו אתגר 🛰️</button>
         <button class="btn-main btn-secondary" onclick="toggleInstructions(true)">איך משחקים? 📖</button>
@@ -131,7 +132,7 @@
 <div id="sidebar">
     <div class="swipe-handle" id="swipeHandle"></div>
     <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="margin:0; font-size: 24px; letter-spacing: 2px;">ISRAMASTER</h2>
+        <h2 style="margin:0; font-size: 24px; letter-spacing: 1px;">IsraMaster</h2>
     </div>
     <div class="stats-card">
         <div style="font-size: 11px; opacity: 0.7; margin-bottom: 5px;">ניסיונות נותרים</div>
@@ -164,6 +165,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// ... (rest of your JavaScript remains exactly the same)
 let allCities = [];
 let target;
 let attempts = 10;
@@ -309,7 +311,6 @@ function processGuess(cityName, isRestoring = false) {
 
     if (!isRestoring) {
         saveProgress(cityName);
-        // ZOOM ADJUSTED: Changed from 13 to 11
         map.flyTo([guess.lat, guess.lon], 11);
         if (window.innerWidth <= 850) toggleSidebar(true);
     }
@@ -371,7 +372,6 @@ function endGame(win, remaining, alreadyProcessed = false) {
     
     L.marker([target.lat, target.lon]).addTo(map).bindPopup(`<b>${target.name}</b>`).openPopup();
     
-    // ZOOM ADJUSTED: Changed from 14 to 12
     if (!alreadyProcessed) map.flyTo([target.lat, target.lon], 12);
 }
 
