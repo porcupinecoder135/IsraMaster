@@ -308,7 +308,7 @@ function processGuess(cityName, isRestoring = false) {
     if (!isRestoring) {
         saveProgress(cityName);
         // Fixed: Zooms in to level 13 for better local view
-        map.flyTo([guess.lat, guess.lon], 13);
+        map.flyTo([guess.lat, guess.lon], 10);
         if (window.innerWidth <= 850) toggleSidebar(true);
     }
 
