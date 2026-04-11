@@ -310,7 +310,6 @@ function processGuess(cityName, isRestoring = false) {
 
     if (!isRestoring) {
         saveProgress(cityName);
-        // ZOOM ADJUSTED: Changed from 13 to 11
         map.flyTo([guess.lat, guess.lon], 11);
         if (window.innerWidth <= 850) toggleSidebar(true);
     }
@@ -351,6 +350,7 @@ function endGame(win, remaining, alreadyProcessed = false) {
         stats.isGameOverToday = true;
         stats.lastResultWasWin = win;
         stats.lastAttemptsCount = remaining;
+        
         if(win) { 
             stats.wins = (stats.wins || 0) + 1; 
             stats.streak = (stats.streak || 0) + 1; 
@@ -372,7 +372,6 @@ function endGame(win, remaining, alreadyProcessed = false) {
     
     L.marker([target.lat, target.lon]).addTo(map).bindPopup(`<b>${target.name}</b>`).openPopup();
     
-    // ZOOM ADJUSTED: Changed from 14 to 12
     if (!alreadyProcessed) map.flyTo([target.lat, target.lon], 12);
 }
 
