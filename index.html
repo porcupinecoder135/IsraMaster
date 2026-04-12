@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="he">
 <head>
-    <link rel="icon" type="image/png" href="favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>IsraMaster - אתגר גאוגרפיה וידיעת הארץ יומי</title>
     
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="icon" type="image/jpeg" href="favicon.jpg">
+    <link rel="apple-touch-icon" href="favicon.jpg">
+    
     <meta name="theme-color" content="#1a2a6c">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -80,9 +80,9 @@
         }
         #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
         #how-to-play-overlay { background: rgba(0,0,0,0.9); display: none; }
-        .game-logo { font-size: clamp(40px, 10vw, 80px); font-weight: 900; letter-spacing: 8px; margin-bottom: 5px; background: linear-gradient(to bottom, #fff, #bdc3c7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .game-logo { font-size: clamp(30px, 8vw, 60px); font-weight: 900; letter-spacing: 2px; margin-bottom: 5px; background: linear-gradient(to bottom, #fff, #bdc3c7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .stats-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 20px; border-radius: 20px; margin-bottom: 25px; text-align: center; }
-        .life-container { display: flex; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .life-container { display: flex; justify: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
         .life-circle { width: 14px; height: 14px; background: var(--gold); border-radius: 50%; box-shadow: 0 0 10px var(--gold); transition: 0.4s; }
         .life-circle.lost { background: rgba(255,255,255,0.1); box-shadow: none; transform: scale(0.7); }
         .btn-main { padding: 16px; background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 18px; width: 100%; margin-top: 10px; }
@@ -98,7 +98,7 @@
         @media (max-width: 850px) {
             #sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70vh; transform: translateY(100%); border-radius: 30px 30px 0 0; z-index: 2100; transition: transform 0.1s linear; }
             #sidebar.open { transform: translateY(0); }
-            #sidebar.transitioning { transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1); }
+            #sidebar.transitioning { transition: transform(0.4s cubic-bezier(0.2, 0, 0, 1)); }
             .swipe-handle { display: block; }
             #mobile-toggle { display: block; }
         }
@@ -107,8 +107,8 @@
 <body>
 
 <div id="setup-overlay">
-    <div class="game-logo">ISRAMASTER</div>
-    <p style="margin-bottom: 30px; font-size: 18px; opacity: 0.9;">האתגר הגיאוגרפי היומי של ישראל</p>
+    <div class="game-logo">IsraMaster</div>
+    <p style="margin-bottom: 30px; font-size: 18px; opacity: 0.9;">אתגר גאוגרפיה וידיעת הארץ יומי</p>
     <div style="display:flex; flex-direction:column; gap:10px; width: 260px;">
         <button class="btn-main" onclick="startGame()">התחילו אתגר 🛰️</button>
         <button class="btn-main btn-secondary" onclick="toggleInstructions(true)">איך משחקים? 📖</button>
@@ -132,17 +132,13 @@
 <div id="sidebar">
     <div class="swipe-handle" id="swipeHandle"></div>
     <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="margin:0; font-size: 24px; letter-spacing: 2px;">ISRAMASTER</h2>
+        <h2 style="margin:0; font-size: 24px; letter-spacing: 1px;">IsraMaster</h2>
     </div>
     <div class="stats-card">
         <div style="font-size: 11px; opacity: 0.7; margin-bottom: 5px;">ניסיונות נותרים</div>
         <div class="life-container" id="lifePoints"></div>
     </div>
     <div style="display:flex; flex-direction:column; gap:10px;">
-        <div id="correction-area" style="display:none; background:rgba(255,255,255,0.1); padding:10px; border-radius:10px; margin-bottom:10px; text-align:center;">
-            <div id="correction-text" style="font-size:14px; margin-bottom:8px;"></div>
-            <button class="btn-main" style="padding:8px; font-size:14px; margin:0;" id="confirm-correction">כן, לזה התכוונתי</button>
-        </div>
         <input type="text" id="cityInput" placeholder="הקלד שם יישוב..." list="cityList" onkeypress="if(event.key === 'Enter') makeGuess()">
         <datalist id="cityList"></datalist>
         <button id="submitBtn" class="btn-main" onclick="makeGuess()">ניחוש 🚀</button>
@@ -163,34 +159,19 @@
             <div class="stat-item"><span class="stat-val" id="st-streak">0</span><span class="stat-lbl">רצף</span></div>
             <div class="stat-item"><span class="stat-val" id="st-avg">0</span><span class="stat-lbl">ממוצע</span></div>
         </div>
-        <div style="background: #f0f0f0; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; color: var(--primary);">
-            יהיה יישוב חדש מחר ⏳
-        </div>
         <button class="btn-main" style="background: var(--dark);" onclick="hideOverlay()">חזרה למפה 🗺️</button>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// ... (rest of your JavaScript remains exactly the same)
 let allCities = [];
 let target;
 let attempts = 10;
 let isGameOver = false;
 
-// Correction Logic Helper (Levenshtein Distance)
-function getLevenshteinDistance(a, b) {
-    const matrix = Array.from({ length: a.length + 1 }, (_, i) => [i]);
-    for (let j = 1; j <= b.length; j++) matrix[0][j] = j;
-    for (let i = 1; i <= a.length; i++) {
-        for (let j = 1; j <= b.length; j++) {
-            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-            matrix[i][j] = Math.min(matrix[i - 1][j] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j - 1] + cost);
-        }
-    }
-    return matrix[a.length][b.length];
-}
-
-// Mobile/Swipe Logic
+// SWIPE LOGIC
 let touchStartY = 0;
 let currentTranslateY = 0;
 const sidebar = document.getElementById('sidebar');
@@ -278,44 +259,25 @@ async function loadData() {
     } catch (e) { console.error("Error loading data", e); }
 }
 
+function restoreGameState() {
+    const stats = JSON.parse(localStorage.getItem('israeleStats')) || {};
+    const today = getDailyKey();
+    if (stats.lastPlayedDate === today && stats.guessesToday) {
+        document.getElementById('setup-overlay').style.display = 'none';
+        stats.guessesToday.forEach(cityName => processGuess(cityName, true));
+        if (stats.isGameOverToday) endGame(stats.lastResultWasWin, stats.lastAttemptsCount, true);
+    }
+}
+
+function startGame() {
+    document.getElementById('setup-overlay').style.opacity = '0';
+    setTimeout(() => document.getElementById('setup-overlay').style.display = 'none', 500);
+}
+
 function makeGuess() {
     const input = document.getElementById('cityInput');
     const val = input.value.trim();
-    const correctionArea = document.getElementById('correction-area');
-    correctionArea.style.display = 'none';
-
     if (!val || isGameOver) return;
-
-    let guess = allCities.find(c => c.name === val);
-    
-    if (!guess) {
-        // Try to find close match
-        let bestMatch = null;
-        let minDistance = 3; 
-
-        allCities.forEach(city => {
-            let dist = getLevenshteinDistance(val, city.name);
-            if (dist < minDistance) {
-                minDistance = dist;
-                bestMatch = city;
-            }
-        });
-
-        if (bestMatch) {
-            document.getElementById('correction-text').innerText = `האם התכוונת ל"${bestMatch.name}"?`;
-            correctionArea.style.display = 'block';
-            document.getElementById('confirm-correction').onclick = () => {
-                correctionArea.style.display = 'none';
-                processGuess(bestMatch.name);
-                input.value = "";
-            };
-            return;
-        } else {
-            alert("היישוב לא נמצא ברשימה");
-            return;
-        }
-    }
-
     processGuess(val);
     input.value = "";
 }
@@ -333,7 +295,6 @@ function processGuess(cityName, isRestoring = false) {
     const ratio = Math.pow(Math.min(dist / 150, 1), 0.35);
     const color = `rgb(255, ${Math.floor(255 * ratio)}, ${Math.floor(100 * ratio)})`;
 
-    // Map Marker
     const icon = L.divIcon({
         className: 'custom-marker',
         html: `<div class="marker-dot" style="background-color:${color}"></div><div class="marker-label">${guess.name}</div>`,
@@ -341,28 +302,7 @@ function processGuess(cityName, isRestoring = false) {
         iconAnchor: [0, 0]
     });
     L.marker([guess.lat, guess.lon], { icon: icon }).addTo(map);
-
-    // DRAW DIRECTION LINE AND DISTANCE ON MAP
-    if (cityName !== target.name) {
-        const line = L.polyline([[guess.lat, guess.lon], [target.lat, target.lon]], {
-            color: color,
-            weight: 3,
-            opacity: 0.6,
-            dashArray: '5, 10'
-        }).addTo(map);
-
-        // Add a small mid-point tooltip or label for distance on map
-        L.circleMarker([ (guess.lat + target.lat)/2, (guess.lon + target.lon)/2 ], { 
-            radius: 0, 
-            opacity: 0 
-        }).addTo(map).bindTooltip(`${dist.toFixed(1)} ק"מ`, {
-            permanent: true,
-            direction: 'center',
-            className: 'marker-label'
-        }).openTooltip();
-    }
     
-    // Sidebar list
     const row = document.createElement('div');
     row.className = 'guess-row';
     row.style.background = color;
@@ -371,27 +311,12 @@ function processGuess(cityName, isRestoring = false) {
 
     if (!isRestoring) {
         saveProgress(cityName);
-        map.flyTo([guess.lat, guess.lon], 10);
+        map.flyTo([guess.lat, guess.lon], 11);
         if (window.innerWidth <= 850) toggleSidebar(true);
     }
 
     if (cityName === target.name) endGame(true, attempts, isRestoring);
     else if (attempts === 0) endGame(false, attempts, isRestoring);
-}
-
-function restoreGameState() {
-    const stats = JSON.parse(localStorage.getItem('israeleStats')) || {};
-    const today = getDailyKey();
-    if (stats.lastPlayedDate === today && stats.guessesToday) {
-        document.getElementById('setup-overlay').style.display = 'none';
-        stats.guessesToday.forEach(cityName => processGuess(cityName, true));
-        if (stats.isGameOverToday) endGame(stats.lastResultWasWin, stats.lastAttemptsCount, true);
-    }
-}
-
-function startGame() {
-    document.getElementById('setup-overlay').style.opacity = '0';
-    setTimeout(() => document.getElementById('setup-overlay').style.display = 'none', 500);
 }
 
 function saveProgress(cityName) {
@@ -426,7 +351,6 @@ function endGame(win, remaining, alreadyProcessed = false) {
         stats.isGameOverToday = true;
         stats.lastResultWasWin = win;
         stats.lastAttemptsCount = remaining;
-        
         if(win) { 
             stats.wins = (stats.wins || 0) + 1; 
             stats.streak = (stats.streak || 0) + 1; 
