@@ -214,11 +214,11 @@ function toggleSidebar(forceOpen) {
     else sidebar.classList.toggle('open');
 }
 
-/** * SEED LOGIC: Changing 'v3' to 'v4' changes today's target city.
+/** * SEED LOGIC: Changing 'v4' to 'v5' changes today's target city.
  */
 function getDailyKey() {
     const d = new Date();
-    return `v4-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    return `v5-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
 async function loadData() {
