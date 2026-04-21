@@ -436,7 +436,7 @@ function endGame(win, remaining, alreadyProcessed = false) {
     document.getElementById('st-avg').innerText = stats.wins > 0 ? ((stats.totalGuesses || 0) / stats.wins).toFixed(1) : "0";
     
     document.getElementById('victory-overlay').style.display = 'flex';
-    document.getElementById('vic-title').innerText = win ? "פגיעה בול! 🎯" : "נגמרו הניסיונות 🚩";
+    document.getElementById('vic-title').innerText = win ? "פגיעה בול! 🎯" : "לא היום... 🚩";
     document.getElementById('vic-msg').innerText = `היעד היה: ${target.name}`;
     
     L.marker([target.lat, target.lon]).addTo(map).bindPopup(`<b>${target.name}</b>`).openPopup();
