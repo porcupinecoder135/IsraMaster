@@ -110,17 +110,17 @@
     <div style="font-size: 45px; font-weight: 900; letter-spacing: 4px;">ISRAMASTER</div>
     <p style="margin-bottom: 30px; opacity: 0.8;">האתגר הגיאוגרפי היומי</p>
     <div style="width: 260px; display: flex; flex-direction: column; gap: 10px;">
-        <button class="btn-main" onclick="startGame()">שחק עכשיו 🛰️</button>
+        <button class="btn-main" onclick="startGame()">שחקו עכשיו 🛰️</button>
         <button class="btn-main btn-secondary" onclick="toggleInstructions(true)">איך משחקים?</button>
     </div>
 </div>
 
 <div id="confirm-overlay">
     <div class="modal">
-        <h3>האם לוותר על האתגר?</h3>
+        <h3>לוותר על האתגר?</h3>
         <p>הפסד יירשם והמיקום ייחשף.</p>
         <button class="btn-main" onclick="endGame(false, attempts)">כן, לוותר 🏳️</button>
-        <button class="btn-main btn-secondary" style="color:#333; border-color:#ccc" onclick="closeConfirm()">חזרה למשחק</button>
+        <button class="btn-main btn-secondary" style="color:#fff; border:1px solid #777" onclick="closeConfirm()">חזרה למשחק</button>
     </div>
 </div>
 
@@ -137,7 +137,7 @@
     </div>
 </div>
 
-<button id="mobile-toggle" onclick="toggleSidebar(true)">הקש ניחוש 📊</button>
+<button id="mobile-toggle" onclick="toggleSidebar(true)">ניחוש 📊</button>
 
 <div id="sidebar">
     <div class="swipe-handle" id="swipeHandle"></div>
@@ -173,7 +173,7 @@
             <div class="stat-item"><span class="stat-val" id="st-streak">0</span><span class="stat-lbl">רצף</span></div>
             <div class="stat-item"><span class="stat-val" id="st-avg">0</span><span class="stat-lbl">ממוצע</span></div>
         </div>
-        <button class="btn-main" style="background: var(--dark);" onclick="hideOverlay()">סגור מפה</button>
+        <button class="btn-main" style="background: var(--dark);" onclick="hideOverlay()">סגירת מפה</button>
     </div>
 </div>
 
@@ -185,13 +185,8 @@ let attempts = 10;
 let isGameOver = false;
 let errorTimeout;
 
-// DOUBLE-FILTER CONFIGURATION
 const approvedArabCities = ["אום אל-פחם", "באקה אל-גרבייה", "ג'לג'וליה", "נצרת", "סח'נין", "רהט", "שפרעם"];
-
-// Keywords that indicate an Arab/Druze settlement to exclude
 const excludeKeywords = ["כפר", "אבו", "עין", "דיר", "משהד", "מג'ד", "חורפיש", "בועיינה", "יאנוח", "ג'ת", "ירכא", "ראמה", "ג'ש", "ביר", "חמאם", "אחסם", "שעב", "דבוריה", "טורעאן", "כאבול", "זמר", "פוריידיס", "ג'סר", "ריינה", "עילוט", "מזרעה", "כסרא", "סמיע", "סאג'ור", "כסלון", "מוקייבלה", "שיבלי", "אום"];
-
-// Safety net: Specific names that don't have keywords but are Arab/Druze settlements
 const extraExclusions = ["פוריידיס", "איכסאל", "נחף", "כאוכב", "ג'לג'וליה", "כפר קאסם", "טירה", "טייבה", "קלנסווה", "ערערה", "חורפיש", "מזרעה", "בוקעאתא", "מג'דל שמס", "מסעדה", "עין קנייה", "לקיה", "תל שבע", "חורה", "כסייפה", "ערערה בנגב", "שגב שלום"];
 
 const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31.5, 34.8], 8);
@@ -234,7 +229,6 @@ map.on('click', () => { if(window.innerWidth <= 850) toggleSidebar(false); });
 
 function getDailyKey() {
     const d = new Date();
-    // Daily key change ensures stats logic is partitioned by day
     return `v7-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
@@ -249,16 +243,10 @@ async function loadData() {
             lon: f.geometry.coordinates[0]
         })).filter(c => c.name !== "");
 
-        // --- THE "FOR SURE" FILTER ---
         const validTargets = allCities.filter(city => {
-            // Check if explicitly approved
             if (approvedArabCities.includes(city.name)) return true;
-            
-            // Check if it's on the exclusion list or safety net
             const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
             const isExcludedByName = extraExclusions.includes(city.name);
-            
-            // If it hits either exclusion list, it is BLOCKED as a target
             return !(isExcludedByKeyword || isExcludedByName);
         });
 
@@ -267,10 +255,8 @@ async function loadData() {
         for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
         const seededRandom = Math.abs(Math.sin(hash));
         
-        // Target is pulled ONLY from the bulletproof list
         target = validTargets[Math.floor(seededRandom * validTargets.length)];
 
-        // LIFE POINTS
         const container = document.getElementById('lifePoints');
         container.innerHTML = '';
         for(let i=0; i<10; i++) {
@@ -390,7 +376,12 @@ function processGuess(cityName, isRestoring = false) {
 
     if (!isRestoring) {
         saveProgress(cityName);
-        map.flyTo([guess.lat, guess.lon], 10);
+        // FIX: Added padding to account for the sidebar so the point is centered in the visible map
+        const sidebarPadding = window.innerWidth > 850 ? [400, 0] : [0, 0];
+        map.flyTo([guess.lat, guess.lon], 11, {
+            paddingTopLeft: sidebarPadding,
+            duration: 1.5
+        });
     }
 
     if (cityName === target.name) endGame(true, attempts, isRestoring);
@@ -449,7 +440,10 @@ function endGame(win, remaining, alreadyProcessed = false) {
     document.getElementById('vic-msg').innerText = `היעד היה: ${target.name}`;
     
     L.marker([target.lat, target.lon]).addTo(map).bindPopup(`<b>${target.name}</b>`).openPopup();
-    if (!alreadyProcessed) map.flyTo([target.lat, target.lon], 12);
+    if (!alreadyProcessed) {
+         const sidebarPadding = window.innerWidth > 850 ? [400, 0] : [0, 0];
+         map.flyTo([target.lat, target.lon], 12, { paddingTopLeft: sidebarPadding });
+    }
 }
 
 function toggleSidebar(forceOpen) {
