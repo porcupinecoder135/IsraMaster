@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="he">
 <head>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-SF4RWN0R10"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SF4RWN0R10"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-SF4RWN0R10');
+    </script>
 
-  gtag('config', 'G-SF4RWN0R10');
-</script>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>IsraMaster - אתגר גאוגרפיה יומי</title>
@@ -34,8 +32,8 @@
 
         #sidebar { 
             width: var(--sidebar-width); height: 100vh; background: var(--dark); 
-            box-shadow: 5px 0 15px rgba(0,0,0,0.2); padding: 30px; 
-            box-sizing: border-box; z-index: 1001; overflow-y: auto; 
+            box-shadow: 5px 0 15px rgba(0,0,0,0.2); padding: 20px; 
+            box-sizing: border-box; z-index: 2100; overflow-y: auto; 
             display: flex; flex-direction: column; color: white;
             transition: transform 0.3s ease-out;
         }
@@ -43,68 +41,67 @@
         #map { flex: 1; height: 100vh; background: #cad7d0; z-index: 1; }
 
         #mobile-toggle {
-            display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: none; position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
             z-index: 2005; background: var(--dark); color: white; border: 2px solid var(--accent);
             padding: 12px 35px; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
         .swipe-handle {
             display: none; width: 50px; height: 6px; background: rgba(255,255,255,0.3);
-            border-radius: 10px; margin: -15px auto 15px auto; padding: 10px 0; background-clip: content-box;
+            border-radius: 10px; margin: -5px auto 15px auto; padding: 10px 0; background-clip: content-box;
         }
 
-        .custom-marker {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
-            background: none !important;
-            border: none !important;
+        /* Error UI - Reverted to Original Dynamic */
+        .error-container { min-height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+        #errorMsg { 
+            width: 100%; min-height: 45px; color: #fff; font-size: 14px; opacity: 0; 
+            text-align: center; font-weight: bold; background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 12px;
+            transition: all 0.3s ease; transform: translateY(5px);
+            display: flex; flex-direction: column; justify-content: center; pointer-events: none;
         }
-        .marker-dot {
-            width: 14px; height: 14px;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 0 8px rgba(0,0,0,0.5);
-            flex-shrink: 0;
-        }
-        .marker-label {
-            background: rgba(0, 0, 0, 0.75);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-            margin-top: 5px;
-            white-space: nowrap;
-            pointer-events: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        #errorMsg.visible { opacity: 1; transform: translateY(0); background: rgba(244, 67, 54, 0.35); border-color: var(--accent); pointer-events: auto;}
+        #errorMsg.suggestion-active { background: rgba(46, 204, 113, 0.2); border-color: var(--success); }
+        .suggestion-link { text-decoration: none; color: var(--gold); display: inline-block; margin-top: 5px; cursor: pointer; padding: 3px 10px; background: rgba(255,255,255,0.1); border-radius: 6px; }
+
+        .shake { animation: shake 0.4s both; border: 2px solid var(--accent) !important; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+
+        /* Stats Card Reverted to Original Style */
+        .stats-card { text-align: center; margin-bottom: 10px; }
+        .life-container { display: flex; justify-content: center; gap: 6px; margin-top: 5px; }
+        .life-circle { width: 10px; height: 10px; background: var(--gold); border-radius: 50%; transition: 0.3s; }
+        .life-circle.lost { background: rgba(255,255,255,0.1); transform: scale(0.7); box-shadow: none; }
+
+        /* Buttons Layout - Reverted to side-by-side */
+        .btn-main { padding: 15px; background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 8px; }
+        .btn-secondary { background: #555; margin-top: 5px; }
+        input { padding: 15px; border: 2px solid rgba(255,255,255,0.2); border-radius:15px; background: rgba(255,255,255,0.1); font-size: 16px; color: white; width: 100%; box-sizing: border-box; outline: none; }
+
+        /* Marker Styles */
+        .custom-marker { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; }
+        .marker-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px rgba(0,0,0,0.5); z-index: 2; }
+        .marker-bubble {
+            background: white; color: #222; padding: 5px 10px; border-radius: 10px; font-size: 12px; font-weight: 900;
+            white-space: nowrap; display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2); border: 2px solid transparent; margin-bottom: 4px;
         }
 
-        #setup-overlay, #how-to-play-overlay, #victory-overlay { 
-            position: fixed; inset: 0; z-index: 3000; display: flex; 
-            flex-direction: column; justify-content: center; align-items: center; 
-            color: white; text-align: center; backdrop-filter: blur(5px);
-        }
+        /* Modals and Overlays */
+        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
         #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
-        #how-to-play-overlay { background: rgba(0,0,0,0.9); display: none; }
-        .game-logo { font-size: clamp(40px, 10vw, 80px); font-weight: 900; letter-spacing: 8px; margin-bottom: 5px; background: linear-gradient(to bottom, #fff, #bdc3c7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stats-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 20px; border-radius: 20px; margin-bottom: 25px; text-align: center; }
-        .life-container { display: flex; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-        .life-circle { width: 14px; height: 14px; background: var(--gold); border-radius: 50%; box-shadow: 0 0 10px var(--gold); transition: 0.4s; }
-        .life-circle.lost { background: rgba(255,255,255,0.1); box-shadow: none; transform: scale(0.7); }
-        .btn-main { padding: 16px; background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 18px; width: 100%; margin-top: 10px; }
-        .btn-secondary { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; }
-        input { padding:18px; border-radius:15px; border:1px solid transparent; background: rgba(255,255,255,0.15); font-size: 17px; color: white; width: 100%; box-sizing: border-box; outline: none; }
-        #feedback { margin-top: 20px; flex: 1; padding-bottom: 40px; }
-        .guess-row { padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; margin-bottom: 8px; color: #000; font-size: 14px; }
-        .modal { background: white; padding: 30px; border-radius: 25px; width: 85%; max-width: 400px; color: #333; }
+        #how-to-play-overlay, #confirm-overlay { background: rgba(0,0,0,0.85); display: none; }
+        
+        .modal { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 350px; color: #333; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
         .stat-val { font-size: 20px; font-weight: 900; color: var(--primary); display: block; }
         .stat-lbl { font-size: 11px; color: #777; }
 
+        #feedback { flex: 1; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px;}
+        .guess-row { padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #000; font-size: 14px; flex-shrink: 0; }
+
         @media (max-width: 850px) {
-            #sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70vh; transform: translateY(100%); border-radius: 30px 30px 0 0; z-index: 2100; transition: transform 0.1s linear; }
+            #sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65vh; transform: translateY(100%); border-radius: 25px 25px 0 0; transition: transform 0.1s linear; }
             #sidebar.open { transform: translateY(0); }
             #sidebar.transitioning { transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1); }
             .swipe-handle { display: block; }
@@ -115,11 +112,20 @@
 <body>
 
 <div id="setup-overlay">
-    <div class="game-logo">ISRAMASTER</div>
-    <p style="margin-bottom: 30px; font-size: 18px; opacity: 0.9;">האתגר הגיאוגרפי היומי של ישראל</p>
-    <div style="display:flex; flex-direction:column; gap:10px; width: 260px;">
-        <button class="btn-main" onclick="startGame()">התחילו אתגר 🛰️</button>
-        <button class="btn-main btn-secondary" onclick="toggleInstructions(true)">איך משחקים? 📖</button>
+    <div style="font-size: 45px; font-weight: 900; letter-spacing: 4px;">ISRAMASTER</div>
+    <p style="margin-bottom: 30px; opacity: 0.8;">האתגר הגיאוגרפי היומי</p>
+    <div style="width: 260px; display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn-main" onclick="startGame()">שחק עכשיו 🛰️</button>
+        <button class="btn-main btn-secondary" onclick="toggleInstructions(true)">איך משחקים?</button>
+    </div>
+</div>
+
+<div id="confirm-overlay">
+    <div class="modal">
+        <h3>האם לוותר על האתגר?</h3>
+        <p>הפסד יירשם והמיקום ייחשף.</p>
+        <button class="btn-main" onclick="endGame(false, attempts)">כן, לוותר 🏳️</button>
+        <button class="btn-main btn-secondary" style="color:#333; border-color:#ccc" onclick="closeConfirm()">חזרה למשחק</button>
     </div>
 </div>
 
@@ -127,31 +133,36 @@
     <div class="modal">
         <h2 style="margin-top:0">איך משחקים?</h2>
         <ul style="text-align: right; line-height: 1.6; padding-right: 20px;">
-            <li>עליכם לנחש בדיוק את <b>שם היישוב המסתורי</b>.</li>
-            <li>בכל ניחוש תקבלו מרחק וכיוון ליעד.</li>
-            <li>רק ניחוש של השם המדויק יזכה אתכם בניצחון!</li>
+            <li>נחשו את <b>היישוב המסתורי</b>.</li>
+            <li>הצבע משתנה לפי המרחק (אדום = קרוב, צהוב = רחוק).</li>
+            <li>החץ מראה את <b>הכיוון</b> ליישוב.</li>
+            <li>יש לכם 10 ניסיונות.</li>
         </ul>
         <button class="btn-main" onclick="toggleInstructions(false)">הבנתי!</button>
     </div>
 </div>
 
-<button id="mobile-toggle" onclick="toggleSidebar(true)">ניחושים 📊</button>
+<button id="mobile-toggle" onclick="toggleSidebar(true)">הקש ניחוש 📊</button>
 
 <div id="sidebar">
     <div class="swipe-handle" id="swipeHandle"></div>
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="margin:0; font-size: 24px; letter-spacing: 2px;">ISRAMASTER</h2>
-    </div>
     <div class="stats-card">
-        <div style="font-size: 11px; opacity: 0.7; margin-bottom: 5px;">ניסיונות נותרים</div>
+        <h3 style="margin:0; letter-spacing: 2px;">ISRAMASTER</h3>
         <div class="life-container" id="lifePoints"></div>
     </div>
-    <div style="display:flex; flex-direction:column; gap:10px;">
-        <input type="text" id="cityInput" placeholder="הקלד שם יישוב..." list="cityList" onkeypress="if(event.key === 'Enter') makeGuess()">
-        <datalist id="cityList"></datalist>
-        <button id="submitBtn" class="btn-main" onclick="makeGuess()">ניחוש 🚀</button>
-        <button id="giveUpBtn" class="btn-main btn-secondary" onclick="giveUp()">ויתור 🏳️</button>
+    
+    <div class="error-container">
+        <div id="errorMsg"></div>
     </div>
+    
+    <input type="text" id="cityInput" placeholder="שם היישוב..." list="cityList" autocomplete="off" onkeypress="if(event.key === 'Enter') makeGuess()" oninput="clearErrorOnType()">
+    <datalist id="cityList"></datalist>
+    
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button id="submitBtn" class="btn-main" style="margin-top:0; flex: 2;" onclick="makeGuess()">ניחוש 🚀</button>
+        <button id="giveUpBtn" class="btn-main btn-secondary" style="margin-top:0; flex: 1;" onclick="showConfirm()">🏳️</button>
+    </div>
+
     <div id="feedback"></div>
 </div>
 
@@ -167,7 +178,7 @@
             <div class="stat-item"><span class="stat-val" id="st-streak">0</span><span class="stat-lbl">רצף</span></div>
             <div class="stat-item"><span class="stat-val" id="st-avg">0</span><span class="stat-lbl">ממוצע</span></div>
         </div>
-        <button class="btn-main" style="background: var(--dark);" onclick="hideOverlay()">חזרה למפה 🗺️</button>
+        <button class="btn-main" style="background: var(--dark);" onclick="hideOverlay()">סגור מפה</button>
     </div>
 </div>
 
@@ -177,6 +188,10 @@ let allCities = [];
 let target;
 let attempts = 10;
 let isGameOver = false;
+let errorTimeout;
+
+const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31.5, 34.8], 8);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
 
 // SWIPE LOGIC
 let touchStartY = 0;
@@ -211,21 +226,8 @@ sidebar.addEventListener('touchend', () => {
     currentTranslateY = 0;
 });
 
-const map = L.map('map', { zoomControl: false }).setView([31.5, 34.8], 8);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+map.on('click', () => { if(window.innerWidth <= 850) toggleSidebar(false); });
 
-function toggleInstructions(show) { document.getElementById('how-to-play-overlay').style.display = show ? 'flex' : 'none'; }
-
-function toggleSidebar(forceOpen) {
-    sidebar.classList.add('transitioning');
-    sidebar.style.transform = '';
-    if (forceOpen === true) sidebar.classList.add('open');
-    else if (forceOpen === false) sidebar.classList.remove('open');
-    else sidebar.classList.toggle('open');
-}
-
-/** * SEED LOGIC: Changing 'v4' to 'v5' changes today's target city.
- */
 function getDailyKey() {
     const d = new Date();
     return `v5-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -246,16 +248,13 @@ async function loadData() {
         for(let i=0; i<10; i++) {
             const div = document.createElement('div');
             div.className = 'life-circle';
-            div.id = `life-${9-i}`; // Reverse IDs for RTL logic
+            div.id = `life-${9-i}`;
             container.appendChild(div);
         }
 
         const seedStr = getDailyKey();
         let hash = 0;
-        for (let i = 0; i < seedStr.length; i++) {
-            hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
-            hash |= 0;
-        }
+        for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
         const seededRandom = Math.abs(Math.sin(hash));
         target = allCities[Math.floor(seededRandom * allCities.length)];
         
@@ -278,24 +277,66 @@ function restoreGameState() {
     }
 }
 
-function startGame() {
-    document.getElementById('setup-overlay').style.opacity = '0';
-    setTimeout(() => document.getElementById('setup-overlay').style.display = 'none', 500);
+function getLevenshteinDistance(a, b) {
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) matrix[i][j] = matrix[i - 1][j - 1];
+            else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+        }
+    }
+    return matrix[b.length][a.length];
+}
+
+function clearErrorOnType() {
+    const errorDiv = document.getElementById('errorMsg');
+    if (errorDiv.classList.contains('visible')) {
+        errorDiv.classList.remove('visible');
+    }
 }
 
 function makeGuess() {
     const input = document.getElementById('cityInput');
     const val = input.value.trim();
+    const errorDiv = document.getElementById('errorMsg');
     if (!val || isGameOver) return;
     
-    const cityExists = allCities.some(c => c.name === val);
-    if (!cityExists) {
-        alert("יישוב לא נמצא ברשימה");
+    const guess = allCities.find(c => c.name === val);
+    
+    if (!guess) {
+        clearTimeout(errorTimeout);
+        input.classList.add('shake');
+        setTimeout(() => input.classList.remove('shake'), 400);
+
+        let bestMatch = null;
+        for (let city of allCities) {
+            if (getLevenshteinDistance(val, city.name) <= 2) { bestMatch = city.name; break; }
+        }
+
+        errorDiv.classList.add('visible');
+        errorDiv.classList.remove('suggestion-active');
+
+        if (bestMatch) {
+            errorDiv.classList.add('suggestion-active');
+            errorDiv.innerHTML = `האם התכוונת ל:<br><span class="suggestion-link" onclick="applySuggestion('${bestMatch}')">${bestMatch}?</span>`;
+        } else {
+            errorDiv.innerHTML = `היישוב לא מופיע במאגר ❌`;
+            errorTimeout = setTimeout(() => { errorDiv.classList.remove('visible'); }, 4000);
+        }
         return;
     }
     
+    errorDiv.classList.remove('visible');
     processGuess(val);
     input.value = "";
+}
+
+function applySuggestion(name) {
+    document.getElementById('cityInput').value = name;
+    document.getElementById('errorMsg').classList.remove('visible');
+    makeGuess();
 }
 
 function processGuess(cityName, isRestoring = false) {
@@ -313,9 +354,8 @@ function processGuess(cityName, isRestoring = false) {
 
     const icon = L.divIcon({
         className: 'custom-marker',
-        html: `<div class="marker-dot" style="background-color:${color}"></div><div class="marker-label">${guess.name}</div>`,
-        iconSize: [0, 0],
-        iconAnchor: [0, 0]
+        html: `<div class="marker-bubble" style="border-color:${color}"><div>${guess.name}</div><div style="font-size:10px">${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:${color}"></div>`,
+        iconSize: [0, 0], iconAnchor: [0, 40]
     });
     L.marker([guess.lat, guess.lon], { icon: icon }).addTo(map);
     
@@ -327,8 +367,7 @@ function processGuess(cityName, isRestoring = false) {
 
     if (!isRestoring) {
         saveProgress(cityName);
-        map.flyTo([guess.lat, guess.lon], 11);
-        if (window.innerWidth <= 850) toggleSidebar(true);
+        map.flyTo([guess.lat, guess.lon], 10);
     }
 
     if (cityName === target.name) endGame(true, attempts, isRestoring);
@@ -357,6 +396,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 function endGame(win, remaining, alreadyProcessed = false) {
     isGameOver = true;
+    closeConfirm();
     document.getElementById('cityInput').disabled = true;
     document.getElementById('submitBtn').disabled = true;
 
@@ -367,14 +407,11 @@ function endGame(win, remaining, alreadyProcessed = false) {
         stats.isGameOverToday = true;
         stats.lastResultWasWin = win;
         stats.lastAttemptsCount = remaining;
-        
         if(win) { 
             stats.wins = (stats.wins || 0) + 1; 
             stats.streak = (stats.streak || 0) + 1; 
             stats.totalGuesses = (stats.totalGuesses || 0) + (10 - remaining); 
-        } else { 
-            stats.streak = 0; 
-        }
+        } else { stats.streak = 0; }
         localStorage.setItem('israeleStats', JSON.stringify(stats));
     }
     
@@ -384,16 +421,27 @@ function endGame(win, remaining, alreadyProcessed = false) {
     document.getElementById('st-avg').innerText = stats.wins > 0 ? ((stats.totalGuesses || 0) / stats.wins).toFixed(1) : "0";
     
     document.getElementById('victory-overlay').style.display = 'flex';
-    document.getElementById('vic-title').innerText = win ? "פגיעה בול! 🎯" : "אולי מחר... 🚩";
+    document.getElementById('vic-title').innerText = win ? "פגיעה בול! 🎯" : "נגמרו הניסיונות 🚩";
     document.getElementById('vic-msg').innerText = `היעד היה: ${target.name}`;
     
     L.marker([target.lat, target.lon]).addTo(map).bindPopup(`<b>${target.name}</b>`).openPopup();
-    
     if (!alreadyProcessed) map.flyTo([target.lat, target.lon], 12);
 }
 
+function toggleSidebar(forceOpen) {
+    sidebar.classList.add('transitioning');
+    sidebar.style.transform = '';
+    if (forceOpen === true) sidebar.classList.add('open');
+    else if (forceOpen === false) sidebar.classList.remove('open');
+    else sidebar.classList.toggle('open');
+}
+
+function startGame() { document.getElementById('setup-overlay').style.display = 'none'; }
+function toggleInstructions(show) { document.getElementById('how-to-play-overlay').style.display = show ? 'flex' : 'none'; }
 function hideOverlay() { document.getElementById('victory-overlay').style.display = 'none'; }
-function giveUp() { if(!isGameOver) endGame(false, attempts); }
+function showConfirm() { if(!isGameOver) document.getElementById('confirm-overlay').style.display = 'flex'; }
+function closeConfirm() { document.getElementById('confirm-overlay').style.display = 'none'; }
+
 window.onload = loadData;
 </script>
 </body>
