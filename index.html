@@ -185,9 +185,14 @@ let attempts = 10;
 let isGameOver = false;
 let errorTimeout;
 
-// AUTOMATIC FILTERING LOGIC
+// DOUBLE-FILTER CONFIGURATION
 const approvedArabCities = ["אום אל-פחם", "באקה אל-גרבייה", "ג'לג'וליה", "נצרת", "סח'נין", "רהט", "שפרעם"];
-const excludeKeywords = ["כפר", "אבו", "עין", "דיר", "משהד", "מג'ד", "חורפיש", "בועיינה", "יאנוח", "ג'ת", "ירכא", "חורפיש", "ראמה"];
+
+// Keywords that indicate an Arab/Druze settlement to exclude
+const excludeKeywords = ["כפר", "אבו", "עין", "דיר", "משהד", "מג'ד", "חורפיש", "בועיינה", "יאנוח", "ג'ת", "ירכא", "ראמה", "ג'ש", "ביר", "חמאם", "אחסם", "שעב", "דבוריה", "טורעאן", "כאבול", "זמר", "פוריידיס", "ג'סר", "ריינה", "עילוט", "מזרעה", "כסרא", "סמיע", "סאג'ור", "כסלון", "מוקייבלה", "שיבלי", "אום"];
+
+// Safety net: Specific names that don't have keywords but are Arab/Druze settlements
+const extraExclusions = ["פוריידיס", "איכסאל", "נחף", "כאוכב", "ג'לג'וליה", "כפר קאסם", "טירה", "טייבה", "קלנסווה", "ערערה", "חורפיש", "מזרעה", "בוקעאתא", "מג'דל שמס", "מסעדה", "עין קנייה", "לקיה", "תל שבע", "חורה", "כסייפה", "ערערה בנגב", "שגב שלום"];
 
 const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31.5, 34.8], 8);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
@@ -229,7 +234,8 @@ map.on('click', () => { if(window.innerWidth <= 850) toggleSidebar(false); });
 
 function getDailyKey() {
     const d = new Date();
-    return `v6-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    // Daily key change ensures stats logic is partitioned by day
+    return `v7-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
 async function loadData() {
@@ -238,18 +244,22 @@ async function loadData() {
         const data = await response.json();
         
         allCities = data.features.map(f => ({
-            name: (f.properties["name:he"] || f.properties["name"] || f.properties["name:en"] || "").trim(),
+            name: (f.properties["name:he"] || f.properties["name"] || "").trim(),
             lat: f.geometry.coordinates[1],
             lon: f.geometry.coordinates[0]
         })).filter(c => c.name !== "");
 
-        // Filter valid targets automatically
+        // --- THE "FOR SURE" FILTER ---
         const validTargets = allCities.filter(city => {
-            const isApproved = approvedArabCities.includes(city.name);
-            const containsExcludeKeyword = excludeKeywords.some(kw => city.name.includes(kw));
+            // Check if explicitly approved
+            if (approvedArabCities.includes(city.name)) return true;
             
-            // Logic: Allow if approved OR if it doesn't look like an excluded settlement type
-            return isApproved || !containsExcludeKeyword;
+            // Check if it's on the exclusion list or safety net
+            const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
+            const isExcludedByName = extraExclusions.includes(city.name);
+            
+            // If it hits either exclusion list, it is BLOCKED as a target
+            return !(isExcludedByKeyword || isExcludedByName);
         });
 
         const seedStr = getDailyKey();
@@ -257,6 +267,7 @@ async function loadData() {
         for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
         const seededRandom = Math.abs(Math.sin(hash));
         
+        // Target is pulled ONLY from the bulletproof list
         target = validTargets[Math.floor(seededRandom * validTargets.length)];
 
         // LIFE POINTS
@@ -281,7 +292,6 @@ async function loadData() {
 function restoreGameState() {
     const stats = JSON.parse(localStorage.getItem('israeleStats')) || { history: {} };
     const today = getDailyKey();
-    
     if (stats.history && stats.history[today]) {
         const todayData = stats.history[today];
         document.getElementById('setup-overlay').style.display = 'none';
@@ -446,7 +456,7 @@ function toggleSidebar(forceOpen) {
     sidebar.classList.add('transitioning');
     sidebar.style.transform = '';
     if (forceOpen === true) sidebar.classList.add('open');
-    else if (forceOpen === false) sidebar.classList.remove('remove');
+    else if (forceOpen === false) sidebar.classList.remove('open');
     else sidebar.classList.toggle('open');
 }
 
