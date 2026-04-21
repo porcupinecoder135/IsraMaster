@@ -51,7 +51,6 @@
             border-radius: 10px; margin: -5px auto 15px auto; padding: 10px 0; background-clip: content-box;
         }
 
-        /* Error UI - Reverted to Original Dynamic */
         .error-container { min-height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
         #errorMsg { 
             width: 100%; min-height: 45px; color: #fff; font-size: 14px; opacity: 0; 
@@ -67,18 +66,15 @@
         .shake { animation: shake 0.4s both; border: 2px solid var(--accent) !important; }
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
 
-        /* Stats Card Reverted to Original Style */
         .stats-card { text-align: center; margin-bottom: 10px; }
         .life-container { display: flex; justify-content: center; gap: 6px; margin-top: 5px; }
         .life-circle { width: 10px; height: 10px; background: var(--gold); border-radius: 50%; transition: 0.3s; }
         .life-circle.lost { background: rgba(255,255,255,0.1); transform: scale(0.7); box-shadow: none; }
 
-        /* Buttons Layout - Reverted to side-by-side */
         .btn-main { padding: 15px; background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 8px; }
         .btn-secondary { background: #555; margin-top: 5px; }
         input { padding: 15px; border: 2px solid rgba(255,255,255,0.2); border-radius:15px; background: rgba(255,255,255,0.1); font-size: 16px; color: white; width: 100%; box-sizing: border-box; outline: none; }
 
-        /* Marker Styles */
         .custom-marker { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; }
         .marker-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px rgba(0,0,0,0.5); z-index: 2; }
         .marker-bubble {
@@ -87,7 +83,6 @@
             box-shadow: 0 3px 10px rgba(0,0,0,0.2); border: 2px solid transparent; margin-bottom: 4px;
         }
 
-        /* Modals and Overlays */
         #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
         #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
         #how-to-play-overlay, #confirm-overlay { background: rgba(0,0,0,0.85); display: none; }
@@ -190,6 +185,10 @@ let attempts = 10;
 let isGameOver = false;
 let errorTimeout;
 
+// AUTOMATIC FILTERING LOGIC
+const approvedArabCities = ["אום אל-פחם", "באקה אל-גרבייה", "ג'לג'וליה", "נצרת", "סח'נין", "רהט", "שפרעם"];
+const excludeKeywords = ["כפר", "אבו", "עין", "דיר", "משהד", "מג'ד", "חורפיש", "בועיינה", "יאנוח", "ג'ת", "ירכא", "חורפיש", "ראמה"];
+
 const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31.5, 34.8], 8);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
 
@@ -230,19 +229,37 @@ map.on('click', () => { if(window.innerWidth <= 850) toggleSidebar(false); });
 
 function getDailyKey() {
     const d = new Date();
-    return `v5-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    return `v6-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
 async function loadData() {
     try {
         const response = await fetch('MapIsrael.geojson');
         const data = await response.json();
+        
         allCities = data.features.map(f => ({
-            name: (f.properties["name:he"] || f.properties["name"] || "").trim(),
+            name: (f.properties["name:he"] || f.properties["name"] || f.properties["name:en"] || "").trim(),
             lat: f.geometry.coordinates[1],
             lon: f.geometry.coordinates[0]
         })).filter(c => c.name !== "");
 
+        // Filter valid targets automatically
+        const validTargets = allCities.filter(city => {
+            const isApproved = approvedArabCities.includes(city.name);
+            const containsExcludeKeyword = excludeKeywords.some(kw => city.name.includes(kw));
+            
+            // Logic: Allow if approved OR if it doesn't look like an excluded settlement type
+            return isApproved || !containsExcludeKeyword;
+        });
+
+        const seedStr = getDailyKey();
+        let hash = 0;
+        for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+        const seededRandom = Math.abs(Math.sin(hash));
+        
+        target = validTargets[Math.floor(seededRandom * validTargets.length)];
+
+        // LIFE POINTS
         const container = document.getElementById('lifePoints');
         container.innerHTML = '';
         for(let i=0; i<10; i++) {
@@ -251,12 +268,6 @@ async function loadData() {
             div.id = `life-${9-i}`;
             container.appendChild(div);
         }
-
-        const seedStr = getDailyKey();
-        let hash = 0;
-        for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
-        const seededRandom = Math.abs(Math.sin(hash));
-        target = allCities[Math.floor(seededRandom * allCities.length)];
         
         const dl = document.getElementById('cityList');
         [...new Set(allCities.map(c => c.name))].sort().forEach(name => {
@@ -268,12 +279,14 @@ async function loadData() {
 }
 
 function restoreGameState() {
-    const stats = JSON.parse(localStorage.getItem('israeleStats')) || {};
+    const stats = JSON.parse(localStorage.getItem('israeleStats')) || { history: {} };
     const today = getDailyKey();
-    if (stats.lastPlayedDate === today && stats.guessesToday) {
+    
+    if (stats.history && stats.history[today]) {
+        const todayData = stats.history[today];
         document.getElementById('setup-overlay').style.display = 'none';
-        stats.guessesToday.forEach(cityName => processGuess(cityName, true));
-        if (stats.isGameOverToday) endGame(stats.lastResultWasWin, stats.lastAttemptsCount, true);
+        todayData.guessesToday.forEach(cityName => processGuess(cityName, true));
+        if (todayData.isGameOverToday) endGame(todayData.lastResultWasWin, todayData.lastAttemptsCount, true);
     }
 }
 
@@ -375,14 +388,12 @@ function processGuess(cityName, isRestoring = false) {
 }
 
 function saveProgress(cityName) {
-    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0 };
+    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {} };
     const today = getDailyKey();
-    if (stats.lastPlayedDate !== today) {
-        stats.lastPlayedDate = today;
-        stats.guessesToday = [];
-        stats.isGameOverToday = false;
-    }
-    stats.guessesToday.push(cityName);
+    if (!stats.history) stats.history = {};
+    if (!stats.history[today]) stats.history[today] = { guessesToday: [], isGameOverToday: false };
+    
+    stats.history[today].guessesToday.push(cityName);
     localStorage.setItem('israeleStats', JSON.stringify(stats));
 }
 
@@ -400,13 +411,16 @@ function endGame(win, remaining, alreadyProcessed = false) {
     document.getElementById('cityInput').disabled = true;
     document.getElementById('submitBtn').disabled = true;
 
-    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0 };
+    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {} };
+    const today = getDailyKey();
+
+    if (!stats.history[today]) stats.history[today] = { guessesToday: [], isGameOverToday: false };
     
-    if (!alreadyProcessed && stats.isGameOverToday !== true) {
+    if (!alreadyProcessed && !stats.history[today].isGameOverToday) {
         stats.played = (stats.played || 0) + 1;
-        stats.isGameOverToday = true;
-        stats.lastResultWasWin = win;
-        stats.lastAttemptsCount = remaining;
+        stats.history[today].isGameOverToday = true;
+        stats.history[today].lastResultWasWin = win;
+        stats.history[today].lastAttemptsCount = remaining;
         if(win) { 
             stats.wins = (stats.wins || 0) + 1; 
             stats.streak = (stats.streak || 0) + 1; 
@@ -432,7 +446,7 @@ function toggleSidebar(forceOpen) {
     sidebar.classList.add('transitioning');
     sidebar.style.transform = '';
     if (forceOpen === true) sidebar.classList.add('open');
-    else if (forceOpen === false) sidebar.classList.remove('open');
+    else if (forceOpen === false) sidebar.classList.remove('remove');
     else sidebar.classList.toggle('open');
 }
 
