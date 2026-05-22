@@ -255,7 +255,13 @@ async function loadData() {
         for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
         const seededRandom = Math.abs(Math.sin(hash));
         
-        target = validTargets[Math.floor(seededRandom * validTargets.length)];
+        // הגדרת רבדים כיעד המסתורי קבוע
+        target = allCities.find(c => c.name === "רבדים");
+
+        // מנגנון הגנה: אם מסיבה כלשהי היישוב לא נמצא ב-GeoJSON, נבחר יעד רנדומלי מהרשימה כדי למנוע קריסה
+        if (!target) {
+            target = validTargets[Math.floor(seededRandom * validTargets.length)];
+        }
 
         const container = document.getElementById('lifePoints');
         container.innerHTML = '';
@@ -376,7 +382,6 @@ function processGuess(cityName, isRestoring = false) {
 
     if (!isRestoring) {
         saveProgress(cityName);
-        // FIX: Added padding to account for the sidebar so the point is centered in the visible map
         const sidebarPadding = window.innerWidth > 850 ? [400, 0] : [0, 0];
         map.flyTo([guess.lat, guess.lon], 11, {
             paddingTopLeft: sidebarPadding,
