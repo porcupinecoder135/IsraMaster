@@ -108,7 +108,7 @@
 
 <div id="setup-overlay">
     <div style="font-size: 45px; font-weight: 900; letter-spacing: 4px;">ISRAMASTER</div>
-    <p style="margin-bottom: 30px; opacity: 0.8;">האתגר הגיאוגרפי האקראי</p>
+    <p style="margin-bottom: 30px; opacity: 0.8;">האתגר הגיאוגרפי היומי</p>
     <div style="width: 260px; display: flex; flex-direction: column; gap: 10px;">
         <button class="btn-main" onclick="startGame()">שחקו עכשיו 🛰️</button>
         <button class="btn-main btn-secondary" onclick="toggleInstructions(true)">איך משחקים?</button>
@@ -206,7 +206,7 @@ sidebar.addEventListener('touchstart', e => {
 
 sidebar.addEventListener('touchmove', e => {
     if (sidebar.scrollTop <= 0) {
-        touchY = e.touches[0].clientY;
+        const touchY = e.touches[0].clientY;
         const diff = touchY - touchStartY;
         if (diff > 0 && sidebar.classList.contains('open')) {
             sidebar.style.transform = `translateY(${diff}px)`;
@@ -250,8 +250,12 @@ async function loadData() {
             return !(isExcludedByKeyword || isExcludedByName);
         });
 
-        // שינוי: בחירת יישוב רנדומלית לחלוטין בכל טעינה ללא תלות בתאריך
-        target = validTargets[Math.floor(Math.random() * validTargets.length)];
+        const seedStr = getDailyKey();
+        let hash = 0;
+        for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+        const seededRandom = Math.abs(Math.sin(hash));
+        
+        target = validTargets[Math.floor(seededRandom * validTargets.length)];
 
         const container = document.getElementById('lifePoints');
         container.innerHTML = '';
@@ -263,13 +267,23 @@ async function loadData() {
         }
         
         const dl = document.getElementById('cityList');
-        dl.innerHTML = ''; // ניקוי הרשימה הקודמת
         [...new Set(allCities.map(c => c.name))].sort().forEach(name => {
             let o = document.createElement('option'); o.value = name; dl.appendChild(o);
         });
 
-        // הוסר המנגנון של restoreGameState כדי לאפשר משחקים חוזרים רנדומליים בכל רענון
+        restoreGameState();
     } catch (e) { console.error("Error loading data", e); }
+}
+
+function restoreGameState() {
+    const stats = JSON.parse(localStorage.getItem('israeleStats')) || { history: {} };
+    const today = getDailyKey();
+    if (stats.history && stats.history[today]) {
+        const todayData = stats.history[today];
+        document.getElementById('setup-overlay').style.display = 'none';
+        todayData.guessesToday.forEach(cityName => processGuess(cityName, true));
+        if (todayData.isGameOverToday) endGame(todayData.lastResultWasWin, todayData.lastAttemptsCount, true);
+    }
 }
 
 function getLevenshteinDistance(a, b) {
@@ -362,6 +376,7 @@ function processGuess(cityName, isRestoring = false) {
 
     if (!isRestoring) {
         saveProgress(cityName);
+        // FIX: Added padding to account for the sidebar so the point is centered in the visible map
         const sidebarPadding = window.innerWidth > 850 ? [400, 0] : [0, 0];
         map.flyTo([guess.lat, guess.lon], 11, {
             paddingTopLeft: sidebarPadding,
