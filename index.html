@@ -81,22 +81,24 @@
         input { padding: 15px; border: 2px solid rgba(255,255,255,0.2); border-radius:15px; background: rgba(255,255,255,0.1); font-size: 16px; color: white; width: 100%; box-sizing: border-box; outline: none; }
 
         .custom-marker { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; }
-        .marker-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px rgba(0,0,0,0.5); z-index: 2; }
+        .marker-dot { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.6); z-index: 2; }
         .marker-bubble {
-            background: white; color: #222; padding: 5px 10px; border-radius: 10px; font-size: 12px; font-weight: 900;
-            white-space: nowrap; display: flex; flex-direction: column; align-items: center;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.2); border: 2px solid transparent; margin-bottom: 4px;
+            background: white; color: #222; padding: 8px 14px; border-radius: 12px; font-size: 15px; font-weight: 900;
+            white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25); border: 2.5px solid transparent; margin-bottom: 6px;
         }
+        .marker-arrow { font-size: 18px; font-weight: bold; display: inline-block; margin-right: 2px; }
 
         #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
         #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
         #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay { background: rgba(0,0,0,0.85); display: none; }
         
         .modal { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 380px; color: #333; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
-        /* Adjusted grid template columns to support 5 stats cleanly */
-        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 15px 0; }
-        .stat-val { font-size: 16px; font-weight: 900; color: var(--primary); display: block; }
-        .stat-lbl { font-size: 10px; color: #777; line-height: 1.2; }
+        
+        /* Adjusted grid template columns to support 4 stats cleanly instead of 5 */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 15px 0; }
+        .stat-val { font-size: 18px; font-weight: 900; color: var(--primary); display: block; }
+        .stat-lbl { font-size: 11px; color: #777; line-height: 1.2; font-weight: bold; }
 
         #clue-hub-trigger {
             background: #555; position: relative;
@@ -122,9 +124,9 @@
         .distribution-title { font-size: 14px; font-weight: 800; color: #444; text-align: right; margin: 15px 0 8px 0; border-top: 1px solid #eee; padding-top: 12px; }
         .dist-chart { display: flex; flex-direction: column; gap: 5px; background: #f9f9f9; padding: 10px; border-radius: 12px; text-align: right; }
         .dist-row { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: bold; }
-        .dist-label { width: 55px; color: #550; text-align: left; }
-        .dist-bar-wrapper { flex: 1; background: #e0e0e0; height: 16px; border-radius: 4px; overflow: hidden; position: relative; }
-        .dist-bar { background: #95a5a6; height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; color: white; font-size: 10px; font-weight: 900; border-radius: 4px; transition: width 0.6s ease; }
+        .dist-label { width: 75px; color: #555; text-align: right; white-space: nowrap; flex-shrink: 0; }
+        .dist-bar-wrapper { flex: 1; background: #e0e0e0; height: 18px; border-radius: 4px; overflow: hidden; position: relative; }
+        .dist-bar { background: #95a5a6; height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; color: white; font-size: 10px; font-weight: 900; border-radius: 4px; transition: width 0.6s ease; box-sizing: border-box; }
         .dist-row.current-user .dist-bar { background: var(--primary) !important; }
 
         .clues-modal-content { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
@@ -256,8 +258,7 @@
             <div class="stat-item"><span class="stat-val" id="st-played">0</span><span class="stat-lbl">משחקים</span></div>
             <div class="stat-item"><span class="stat-val" id="st-winpct">0%</span><span class="stat-lbl">ניצחונות</span></div>
             <div class="stat-item"><span class="stat-val" id="st-streak">0</span><span class="stat-lbl">רצף</span></div>
-            <div class="stat-item"><span class="stat-val" id="st-avg">0</span><span class="stat-lbl">ממוצע</span></div>
-            <div class="stat-item"><span class="stat-val" id="st-firsttry">0%</span><span class="stat-lbl">הצלחה מכה ראשונה</span></div>
+            <div class="stat-item"><span class="stat-val" id="st-avg">0</span><span class="stat-lbl">ממוצע ניסיונות</span></div>
         </div>
 
         <div class="distribution-title">📊 התפלגות הניחושים הגלובלית היום:</div>
@@ -328,7 +329,6 @@ sidebar.addEventListener('touchend', () => {
 map.on('click', () => { if(window.innerWidth <= 850) toggleSidebar(false); });
 
 function getGameDayIndex() {
-    // Reset to May 29, 2026 so players can start fresh today
     const startDate = new Date(2026, 4, 29); 
     const today = new Date();
     startDate.setHours(0,0,0,0);
@@ -613,15 +613,15 @@ function processGuess(cityName, isRestoring = false, isClueGuess = false) {
 
     let markerHtml = ``;
     if(isClueGuess) {
-        markerHtml = `<div class="marker-bubble" style="border-color:var(--purple); background:#f8efff; color:var(--purple);"><div>✨ רמז: ${guess.name}</div><div style="font-size:10px">${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:var(--purple)"></div>`;
+        markerHtml = `<div class="marker-bubble" style="border-color:var(--purple); background:#f8efff; color:var(--purple);"><div>✨ רמז: ${guess.name}</div><div style="font-size:12px; font-weight: 800;">${dist.toFixed(1)} ק"מ <span class="marker-arrow" style="transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:var(--purple)"></div>`;
     } else {
-        markerHtml = `<div class="marker-bubble" style="border-color:${color}"><div>${guess.name}</div><div style="font-size:10px">${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:${color}"></div>`;
+        markerHtml = `<div class="marker-bubble" style="border-color:${color}"><div>${guess.name}</div><div style="font-size:12px; font-weight: 800;">${dist.toFixed(1)} ק"מ <span class="marker-arrow" style="transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:${color}"></div>`;
     }
 
     const icon = L.divIcon({
         className: 'custom-marker',
         html: markerHtml,
-        iconSize: [0, 0], iconAnchor: [0, 40]
+        iconSize: [0, 0], iconAnchor: [0, 48]
     });
     L.marker([guess.lat, guess.lon], { icon: icon }).addTo(map);
     
@@ -652,7 +652,7 @@ function processGuess(cityName, isRestoring = false, isClueGuess = false) {
 }
 
 function saveProgress(cityName, isClueGuess) {
-    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {} };
+    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {}, gaveUpCount: 0 };
     const today = getDailyKey();
     if (!stats.history) stats.history = {};
     if (!stats.history[today]) stats.history[today] = { guessesToday: [], clueGuessesToday: [], isGameOverToday: false };
@@ -675,29 +675,38 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function generateGlobalDistribution(userScore) {
+function generateGlobalDistribution(userScore, gaveUpThisTurn = false) {
     const day = getGameDayIndex();
-    const baseDistribution = [5, 12, 18, 22, 15, 10, 7, 5, 4, 2]; 
+    
+    // Realistically calibrated geographic trivia metrics (Bell curve distribution shape)
+    // index 0 = 1 attempt, index 9 = 10 attempts
+    const baseDistribution = [0.4, 1.8, 4.5, 12.3, 21.0, 24.2, 16.5, 9.2, 5.3, 2.8]; 
+    let baseGaveUp = 13.0; // Realistic standard percentage of players surrendering over difficult maps
     
     let dynamicDist = baseDistribution.map((v, i) => {
-        let shift = Math.sin(day + i) * 3;
-        return Math.max(1, Math.round(v + shift));
+        let shift = Math.sin(day + i) * 0.4;
+        return Math.max(0.1, v + shift);
     });
+    let dynamicGaveUp = Math.max(5.0, baseGaveUp + Math.cos(day) * 2);
+    
+    // Total calculation parameters
+    const totalSum = dynamicDist.reduce((a, b) => a + b, 0) + dynamicGaveUp;
     
     const container = document.getElementById('globalDistributionChart');
     container.innerHTML = '';
     
-    const maxVal = Math.max(...dynamicDist);
+    const maxVal = Math.max(...dynamicDist, dynamicGaveUp);
     
+    // Generate Rows 1 to 10
     for (let i = 0; i < 10; i++) {
         const row = document.createElement('div');
         row.className = 'dist-row';
-        if (userScore === (i + 1)) {
+        if (!gaveUpThisTurn && userScore === (i + 1)) {
             row.classList.add('current-user');
         }
         
-        const pct = Math.round((dynamicDist[i] / dynamicDist.reduce((a,b)=>a+b)) * 100);
-        const widthPct = (dynamicDist[i] / maxVal) * 85; 
+        const pct = Math.round((dynamicDist[i] / totalSum) * 100);
+        const widthPct = Math.max(8, (dynamicDist[i] / maxVal) * 85); 
         
         row.innerHTML = `
             <div class="dist-label">${i+1} ניסיונות</div>
@@ -707,6 +716,23 @@ function generateGlobalDistribution(userScore) {
         `;
         container.appendChild(row);
     }
+
+    // Append the newly structural surrendered statistics bar
+    const surrenderRow = document.createElement('div');
+    surrenderRow.className = 'dist-row';
+    if (gaveUpThisTurn) {
+        surrenderRow.classList.add('current-user');
+    }
+    const surrenderPct = Math.round((dynamicGaveUp / totalSum) * 100);
+    const surrenderWidthPct = Math.max(8, (dynamicGaveUp / maxVal) * 85);
+
+    surrenderRow.innerHTML = `
+        <div class="dist-label">🏳️ ויתרו</div>
+        <div class="dist-bar-wrapper">
+            <div class="dist-bar" style="width: ${surrenderWidthPct}%; background-color: #e74c3c;">${surrenderPct}%</div>
+        </div>
+    `;
+    container.appendChild(surrenderRow);
 }
 
 function shareGame(platform) {
@@ -715,26 +741,21 @@ function shareGame(platform) {
     const day = getGameDayIndex() + 1;
     
     let resultEmojis = "";
-    if (attempts > 0) {
+    if (attempts > 0 && isGameOver && document.getElementById('vic-title').innerText.includes("פגיעה")) {
         resultEmojis = "🎯 פגעתי בול!";
     } else {
         resultEmojis = "🏳️ לא הצלחתי היום...";
     }
     
-    // Built text body containing requested isramaster.com domain reference
     const textToShare = `IsraMaster האתגר היומי #יעד_${day}\n${resultEmojis}\n🛰️ ניסיונות: ${finalGuesses}/10\n🔮 רמזים שנוצלו: ${usedHintsCount}/2\n\nבואו לנסות גם אתם ב-isramaster.com! 🗺️✨`;
     
     if (platform === 'whatsapp') {
         const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`;
         window.open(url, '_blank');
     } else if (platform === 'instagram') {
-        // Deep linking scheme to open the native Instagram app sharesheet context directly
         const instagramUrl = `instagram://sharesheet?text=${encodeURIComponent(textToShare)}`;
-        
-        // Attempt to launch application protocol
         window.location.href = instagramUrl;
         
-        // Safety fallback structure in case the device application route fails
         setTimeout(() => {
             navigator.clipboard.writeText(textToShare).then(() => {
                 alert("📋 נתוני המשחק הועתקו ללוח! אם האפליקציה לא נפתחה אוטומטית, תוכלו לפתוח את האינסטגרם ולהדביק ישירות בסטורי שלכם 📸");
@@ -751,11 +772,13 @@ function endGame(win, remaining, alreadyProcessed = false) {
     document.getElementById('cityInput').disabled = true;
     document.getElementById('submitBtn').disabled = true;
 
-    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {}, firstTryWins: 0 };
+    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {}, gaveUpCount: 0 };
     const today = getDailyKey();
 
     if (!stats.history[today]) stats.history[today] = { guessesToday: [], clueGuessesToday: [], isGameOverToday: false };
     
+    let gaveUpThisTurn = (!win && remaining === attempts && attempts > 0);
+
     if (!alreadyProcessed && !stats.history[today].isGameOverToday) {
         stats.played = (stats.played || 0) + 1;
         stats.history[today].isGameOverToday = true;
@@ -765,12 +788,12 @@ function endGame(win, remaining, alreadyProcessed = false) {
             stats.wins = (stats.wins || 0) + 1; 
             stats.streak = (stats.streak || 0) + 1; 
             stats.totalGuesses = (stats.totalGuesses || 0) + (10 - remaining); 
-            
-            // Check if user won on their very first guess action without checking clues
-            if ((10 - remaining) === 1 && (!unlockedClues.closestNeighborUsed && !unlockedClues.fiveOptionsUsed)) {
-                stats.firstTryWins = (stats.firstTryWins || 0) + 1;
+        } else { 
+            stats.streak = 0; 
+            if (remaining > 0) {
+                stats.gaveUpCount = (stats.gaveUpCount || 0) + 1;
             }
-        } else { stats.streak = 0; }
+        }
         localStorage.setItem('israeleStats', JSON.stringify(stats));
     }
     
@@ -782,12 +805,11 @@ function endGame(win, remaining, alreadyProcessed = false) {
     document.getElementById('st-streak').innerText = stats.streak || 0;
     document.getElementById('st-avg').innerText = stats.wins > 0 ? ((stats.totalGuesses || 0) / stats.wins).toFixed(1) : "0";
     
-    // Dynamically calculate and set first try metric view element
-    const firstTryPct = stats.played > 0 ? Math.round(((stats.firstTryWins || 0) / stats.played) * 100) : 0;
-    document.getElementById('st-firsttry').innerText = firstTryPct + "%";
-
     const userScore = win ? (10 - remaining) : 0;
-    generateGlobalDistribution(userScore);
+    
+    // Explicit dynamic runtime flag to properly evaluate surrender styling condition rules
+    let currentGaveUpFlag = gaveUpThisTurn || (stats.history[today] && !stats.history[today].lastResultWasWin && stats.history[today].lastAttemptsCount > 0);
+    generateGlobalDistribution(userScore, currentGaveUpFlag);
 
     document.getElementById('victory-overlay').style.display = 'flex';
     document.getElementById('vic-title').innerText = win ? "פגיעה בול! 🎯" : "לא היום... 🚩";
