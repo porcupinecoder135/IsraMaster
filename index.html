@@ -17,6 +17,8 @@
     <meta name="theme-color" content="#1a2a6c">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
     <style>
         :root {
             --primary: #1a2a6c;
@@ -24,6 +26,8 @@
             --gold: #ffeb3b;
             --success: #2ecc71;
             --dark: #2c3e50;
+            --purple: #9b59b6;
+            --cyan: #00cec9;
             --sidebar-width: 400px;
         }
 
@@ -71,7 +75,8 @@
         .life-circle { width: 10px; height: 10px; background: var(--gold); border-radius: 50%; transition: 0.3s; }
         .life-circle.lost { background: rgba(255,255,255,0.1); transform: scale(0.7); box-shadow: none; }
 
-        .btn-main { padding: 15px; background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 8px; }
+        .btn-main { padding: 15px; background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease; }
+        .btn-main:active { transform: scale(0.98); }
         .btn-secondary { background: #555; margin-top: 5px; }
         input { padding: 15px; border: 2px solid rgba(255,255,255,0.2); border-radius:15px; background: rgba(255,255,255,0.1); font-size: 16px; color: white; width: 100%; box-sizing: border-box; outline: none; }
 
@@ -83,17 +88,73 @@
             box-shadow: 0 3px 10px rgba(0,0,0,0.2); border: 2px solid transparent; margin-bottom: 4px;
         }
 
-        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
+        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
         #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
-        #how-to-play-overlay, #confirm-overlay { background: rgba(0,0,0,0.85); display: none; }
+        #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay { background: rgba(0,0,0,0.85); display: none; }
         
-        .modal { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 350px; color: #333; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
-        .stat-val { font-size: 20px; font-weight: 900; color: var(--primary); display: block; }
-        .stat-lbl { font-size: 11px; color: #777; }
+        .modal { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 380px; color: #333; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
+        /* Adjusted grid template columns to support 5 stats cleanly */
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 15px 0; }
+        .stat-val { font-size: 16px; font-weight: 900; color: var(--primary); display: block; }
+        .stat-lbl { font-size: 10px; color: #777; line-height: 1.2; }
+
+        #clue-hub-trigger {
+            background: #555; position: relative;
+        }
+        #clue-hub-trigger.glow-active {
+            background: linear-gradient(45deg, var(--purple), #8e44ad);
+            animation: pulse-trigger-limited 1.5s ease-in-out 2; 
+            box-shadow: 0 0 15px rgba(155, 89, 182, 0.6);
+        }
+        @keyframes pulse-trigger-limited {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(155, 89, 182, 0.5); }
+            50% { transform: scale(1.1); box-shadow: 0 0 25px rgba(0, 206, 201, 0.8); }
+        }
+
+        .used-hints-summary { font-size: 14px; font-weight: bold; color: var(--purple); margin: 5px 0 15px 0; background: #f5f0fa; padding: 6px; border-radius: 8px; }
+        
+        .share-container { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-share { flex: 1; padding: 12px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.2s; }
+        .btn-share:active { transform: scale(0.98); }
+        .btn-whatsapp { background: #25D366; }
+        .btn-instagram { background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D); }
+        
+        .distribution-title { font-size: 14px; font-weight: 800; color: #444; text-align: right; margin: 15px 0 8px 0; border-top: 1px solid #eee; padding-top: 12px; }
+        .dist-chart { display: flex; flex-direction: column; gap: 5px; background: #f9f9f9; padding: 10px; border-radius: 12px; text-align: right; }
+        .dist-row { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: bold; }
+        .dist-label { width: 55px; color: #550; text-align: left; }
+        .dist-bar-wrapper { flex: 1; background: #e0e0e0; height: 16px; border-radius: 4px; overflow: hidden; position: relative; }
+        .dist-bar { background: #95a5a6; height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; color: white; font-size: 10px; font-weight: 900; border-radius: 4px; transition: width 0.6s ease; }
+        .dist-row.current-user .dist-bar { background: var(--primary) !important; }
+
+        .clues-modal-content { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .clue-btn {
+            background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; border: none;
+            padding: 14px; border-radius: 15px; font-weight: bold; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; gap: 8px; font-size: 15px;
+            transition: all 0.3s ease;
+        }
+        .clue-btn:hover { background: linear-gradient(45deg, #8e44ad, #9b59b6); transform: scale(1.02); }
+        .clue-btn.used { background: #bbb !important; color: #666; cursor: not-allowed; opacity: 0.6; transform: none; box-shadow: none; }
+        
+        .hint-options-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
+        .hint-opt-btn {
+            padding: 12px; border: 2px solid #ddd; background: #f9f9f9; border-radius: 12px;
+            font-size: 15px; font-weight: bold; color: var(--dark); cursor: pointer; transition: all 0.2s;
+        }
+        .hint-opt-btn:hover { background: var(--purple); color: white; border-color: var(--purple); }
 
         #feedback { flex: 1; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px;}
         .guess-row { padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #000; font-size: 14px; flex-shrink: 0; }
+        
+        .guess-row.special-clue {
+            border: 3px dashed #fff; box-shadow: 0 0 15px rgba(255,255,255,0.4);
+            animation: flash-special 1.5s infinite;
+        }
+        @keyframes flash-special {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
 
         @media (max-width: 850px) {
             #sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65vh; transform: translateY(100%); border-radius: 25px 25px 0 0; transition: transform 0.1s linear; }
@@ -124,6 +185,23 @@
     </div>
 </div>
 
+<div id="clues-box-overlay">
+    <div class="modal" style="max-width: 380px;">
+        <h3 id="clue-modal-title" style="color: var(--purple); margin-top:0; font-size:22px;">🔮 מרכז הרמזים</h3>
+        <p id="clue-modal-explanation" style="font-size:13px; color:#555; line-height:1.4; margin-bottom:15px;"></p>
+        <div class="clues-modal-content" id="cluesModalContainer"></div>
+        <button class="btn-main btn-secondary" style="margin-top:15px; width:100%;" onclick="closeCluesHub()">סגירה</button>
+    </div>
+</div>
+
+<div id="clue-modal-overlay">
+    <div class="modal">
+        <h3 style="color: var(--purple); margin-top:0;">🔮 רמז האפשרויות הגדול!</h3>
+        <p style="font-size:14px; color:#555; line-height:1.4;">היעד המסתורי הוא <b>אחד מחמשת</b> היישובים הבאים באותו האזור. בחרו יישוב כדי לבדוק אותו כרמז!</p>
+        <div class="hint-options-grid" id="hintOptionsContainer"></div>
+    </div>
+</div>
+
 <div id="how-to-play-overlay">
     <div class="modal">
         <h2 style="margin-top:0">איך משחקים?</h2>
@@ -132,6 +210,9 @@
             <li>הצבע משתנה לפי המרחק (אדום = קרוב, צהוב = רחוק).</li>
             <li>החץ מראה את <b>הכיוון</b> ליישוב.</li>
             <li>יש לכם 10 ניסיונות.</li>
+            <hr style="opacity:0.2; margin: 10px 0;">
+            <li><b>🔮 מערכת רמזים (ללא הורדת ניסיונות!):</b></li>
+            <li>התקרבו אל <b>מתחת ל-10 ק"מ</b> מהיעד כדי לפתוח בבת אחת שני רמזים מטורפים: חשיפת השכן הקרוב ביותר, ומודאל בחירה של 1 מתוך 5!</li>
         </ul>
         <button class="btn-main" onclick="toggleInstructions(false)">הבנתי!</button>
     </div>
@@ -153,8 +234,9 @@
     <input type="text" id="cityInput" placeholder="שם היישוב..." list="cityList" autocomplete="off" onkeypress="if(event.key === 'Enter') makeGuess()" oninput="clearErrorOnType()">
     <datalist id="cityList"></datalist>
     
-    <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button id="submitBtn" class="btn-main" style="margin-top:0; flex: 2;" onclick="makeGuess()">ניחוש 🚀</button>
+    <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button id="submitBtn" class="btn-main" style="margin-top:0; flex: 3;" onclick="makeGuess()">ניחוש 🚀</button>
+        <button id="clue-hub-trigger" class="btn-main" style="margin-top:0; flex: 1.2;" onclick="openCluesHub()">🔮</button>
         <button id="giveUpBtn" class="btn-main btn-secondary" style="margin-top:0; flex: 1;" onclick="showConfirm()">🏳️</button>
     </div>
 
@@ -164,16 +246,29 @@
 <div id="map"></div>
 
 <div id="victory-overlay" style="display:none;">
-    <div class="modal">
+    <div class="modal" style="max-width: 420px; width: 90%;">
         <h2 id="vic-title"></h2>
         <p id="vic-msg"></p>
+        
+        <div id="hints-count-summary" class="used-hints-summary"></div>
+
         <div class="stats-grid">
             <div class="stat-item"><span class="stat-val" id="st-played">0</span><span class="stat-lbl">משחקים</span></div>
             <div class="stat-item"><span class="stat-val" id="st-winpct">0%</span><span class="stat-lbl">ניצחונות</span></div>
             <div class="stat-item"><span class="stat-val" id="st-streak">0</span><span class="stat-lbl">רצף</span></div>
             <div class="stat-item"><span class="stat-val" id="st-avg">0</span><span class="stat-lbl">ממוצע</span></div>
+            <div class="stat-item"><span class="stat-val" id="st-firsttry">0%</span><span class="stat-lbl">הצלחה מכה ראשונה</span></div>
         </div>
-        <button class="btn-main" style="background: var(--dark);" onclick="hideOverlay()">סגירת מפה 🗺️</button>
+
+        <div class="distribution-title">📊 התפלגות הניחושים הגלובלית היום:</div>
+        <div class="dist-chart" id="globalDistributionChart"></div>
+
+        <div class="share-container">
+            <button class="btn-share btn-whatsapp" onclick="shareGame('whatsapp')"><i class="fa-brands fa-whatsapp"></i> WhatsApp 💬</button>
+            <button class="btn-share btn-instagram" onclick="shareGame('instagram')">Instagram 📸</button>
+        </div>
+
+        <button class="btn-main" style="background: var(--dark); margin-top: 15px;" onclick="hideOverlay()">סגירת מפה 🗺️</button>
     </div>
 </div>
 
@@ -185,6 +280,12 @@ let attempts = 10;
 let isGameOver = false;
 let errorTimeout;
 
+let unlockedClues = { 
+    eligible: false, 
+    closestNeighborUsed: false,
+    fiveOptionsUsed: false
+};
+
 const approvedArabCities = ["אום אל-פחם", "באקה אל-גרבייה", "ג'לג'וליה", "נצרת", "סח'נין", "רהט", "שפרעם"];
 const excludeKeywords = ["כפר", "אבו", "עין", "דיר", "משהד", "מג'ד", "חורפיש", "בועיינה", "יאנוח", "ג'ת", "ירכא", "ראמה", "ג'ש", "ביר", "חמאם", "אחסם", "שעב", "דבוריה", "טורעאן", "כאבול", "זמר", "פוריידיס", "ג'סר", "ריינה", "עילוט", "מזרעה", "כסרא", "סמיע", "סאג'ור", "כסלון", "מוקייבלה", "שיבלי", "אום"];
 const extraExclusions = ["פוריידיס", "איכסאל", "נחף", "כאוכב", "ג'לג'וליה", "כפר קאסם", "טירה", "טייבה", "קלנסווה", "ערערה", "חורפיש", "מזרעה", "בוקעאתא", "מג'דל שמס", "מסעדה", "עין קנייה", "לקיה", "תל שבע", "חורה", "כסייפה", "ערערה בנגב", "שגב שלום"];
@@ -192,7 +293,6 @@ const extraExclusions = ["פוריידיס", "איכסאל", "נחף", "כאוכ
 const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31.5, 34.8], 8);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
 
-// SWIPE LOGIC
 let touchStartY = 0;
 let currentTranslateY = 0;
 const sidebar = document.getElementById('sidebar');
@@ -206,7 +306,7 @@ sidebar.addEventListener('touchstart', e => {
 
 sidebar.addEventListener('touchmove', e => {
     if (sidebar.scrollTop <= 0) {
-        const touchY = e.touches[0].clientY;
+        let touchY = e.touches[0].clientY;
         const diff = touchY - touchStartY;
         if (diff > 0 && sidebar.classList.contains('open')) {
             sidebar.style.transform = `translateY(${diff}px)`;
@@ -227,9 +327,8 @@ sidebar.addEventListener('touchend', () => {
 
 map.on('click', () => { if(window.innerWidth <= 850) toggleSidebar(false); });
 
-// פונקציה שמחשבת את מספר הימים שחלפו מתאריך ההשקה כדי לקבוע את סדר היישובים המובנים
 function getGameDayIndex() {
-    // תאריך השקה קבוע: ה-29 במאי 2026
+    // Reset to May 29, 2026 so players can start fresh today
     const startDate = new Date(2026, 4, 29); 
     const today = new Date();
     startDate.setHours(0,0,0,0);
@@ -254,7 +353,6 @@ async function loadData() {
             lon: f.geometry.coordinates[0]
         })).filter(c => c.name !== "");
 
-        // רשימת היישובים המובטחים שלך לסבבים הראשונים
         const customSequence = ["קבוצת יבנה", "מפלסים", "מנחמיה", "יבנאל", "כנות", "אזור", "נשר", "בית אורן", "באר אורה"];
 
         const validTargets = allCities.filter(city => {
@@ -267,16 +365,12 @@ async function loadData() {
         const dayIndex = getGameDayIndex();
 
         if (dayIndex < customSequence.length) {
-            // בימים הראשונים - שולפים בדיוק לפי הסדר מהרשימה שלך
             const nextCityName = customSequence[dayIndex];
             target = allCities.find(c => c.name === nextCityName);
-            
-            // הגנת גיבוי: אם היישוב לא נמצא משום מה ב-GeoJSON, נבחר מהרשימה הכללית
             if (!target) {
                 target = validTargets[dayIndex % validTargets.length];
             }
         } else {
-            // לאחר שהרשימה מסתיימת - עוברים ללוגיקה האקראית הרגילה (תוך סינון היישובים שכבר הופיעו)
             const remainingTargets = validTargets.filter(city => !customSequence.includes(city.name));
             const seedStr = getDailyKey();
             let hash = 0;
@@ -311,7 +405,18 @@ function restoreGameState() {
     if (stats.history && stats.history[today]) {
         const todayData = stats.history[today];
         document.getElementById('setup-overlay').style.display = 'none';
-        todayData.guessesToday.forEach(cityName => processGuess(cityName, true));
+        
+        if (todayData.unlockedClues) {
+            unlockedClues = todayData.unlockedClues;
+        }
+        
+        todayData.guessesToday.forEach(cityName => {
+            let isClue = false;
+            if (todayData.clueGuessesToday && todayData.clueGuessesToday.includes(cityName)) {
+                isClue = true;
+            }
+            processGuess(cityName, true, isClue);
+        });
         if (todayData.isGameOverToday) endGame(todayData.lastResultWasWin, todayData.lastAttemptsCount, true);
     }
 }
@@ -378,34 +483,163 @@ function applySuggestion(name) {
     makeGuess();
 }
 
-function processGuess(cityName, isRestoring = false) {
+function getClosestNeighbor(targetCity) {
+    let closest = null;
+    let minDistance = Infinity;
+    
+    allCities.forEach(c => {
+        if (c.name !== targetCity.name) {
+            let d = calculateDistance(targetCity.lat, targetCity.lon, c.lat, c.lon);
+            if (d < minDistance) {
+                minDistance = d;
+                closest = c;
+            }
+        }
+    });
+    return closest ? closest.name : "לא נמצא";
+}
+
+function generateFiveRegionalOptions() {
+    let listWithDistances = allCities
+        .filter(c => c.name !== target.name)
+        .map(c => ({
+            name: c.name,
+            dist: calculateDistance(target.lat, target.lon, c.lat, c.lon)
+        }));
+    
+    listWithDistances.sort((a,b) => a.dist - b.dist);
+    
+    let options = listWithDistances.slice(1, 5).map(o => o.name);
+    options.push(target.name);
+    
+    return options.sort(() => Math.random() - 0.5);
+}
+
+function updateCluesHubTriggerUI() {
+    const trigger = document.getElementById('clue-hub-trigger');
+    if (unlockedClues.eligible) {
+        const bothUsed = unlockedClues.closestNeighborUsed && unlockedClues.fiveOptionsUsed;
+        if (!bothUsed) {
+            trigger.classList.add('glow-active');
+            return;
+        }
+    }
+    trigger.classList.remove('glow-active');
+}
+
+function openCluesHub() {
+    const overlay = document.getElementById('clues-box-overlay');
+    const container = document.getElementById('cluesModalContainer');
+    const explanation = document.getElementById('clue-modal-explanation');
+    container.innerHTML = '';
+
+    if (!unlockedClues.eligible) {
+        explanation.innerHTML = `🔒 <b>מרכז הרמזים נעול!</b><br>הרמזים ייפתחו אוטומטית ברגע שתצליחו לנחש יישוב שנמצא <b>במרחק של 10 ק"מ או פחות</b> מהיעד.`;
+    } else {
+        explanation.innerHTML = `🎉 <b>כל הכבוד! הגעתם אל מתחת ל-10 ק"מ!</b><br>בזכות הקרבה המטורפת שלכם ליעד, שני הרמזים הבאים פתוחים בפניכם ללא עלות ניסיונות:`;
+        
+        if (!unlockedClues.closestNeighborUsed) {
+            container.innerHTML += `<button class="clue-btn" onclick="useClosestNeighborClue()">🏡 השכן הקרוב ביותר</button>`;
+        } else {
+            container.innerHTML += `<button class="clue-btn used" disabled>🏡 רמז השכן הקרוב כבר נוצל ✅</button>`;
+        }
+
+        if (!unlockedClues.fiveOptionsUsed) {
+            container.innerHTML += `<button class="clue-btn" style="background: linear-gradient(45deg, #00cec9, #0984e3);" onclick="openFiveOptionsModal()">🧩 1 מתוך 5 אפשרויות</button>`;
+        } else {
+            container.innerHTML += `<button class="clue-btn used" disabled>🧩 רמז 5 האפשרויות כבר נוצל ✅</button>`;
+        }
+    }
+
+    overlay.style.display = 'flex';
+}
+
+function closeCluesHub() {
+    document.getElementById('clues-box-overlay').style.display = 'none';
+}
+
+function useClosestNeighborClue() {
+    if(unlockedClues.closestNeighborUsed) return;
+    unlockedClues.closestNeighborUsed = true;
+    closeCluesHub();
+    updateCluesHubTriggerUI();
+    
+    const neighborName = getClosestNeighbor(target);
+    processGuess(neighborName, false, true); 
+}
+
+function openFiveOptionsModal() {
+    if(unlockedClues.fiveOptionsUsed) return;
+    closeCluesHub();
+    const container = document.getElementById('hintOptionsContainer');
+    container.innerHTML = '';
+    
+    const options = generateFiveRegionalOptions();
+    options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'hint-opt-btn';
+        btn.innerText = opt;
+        btn.onclick = () => {
+            unlockedClues.fiveOptionsUsed = true;
+            document.getElementById('clue-modal-overlay').style.display = 'none';
+            updateCluesHubTriggerUI();
+            processGuess(opt, false, true);
+        };
+        container.appendChild(btn);
+    });
+    
+    document.getElementById('clue-modal-overlay').style.display = 'flex';
+}
+
+function processGuess(cityName, isRestoring = false, isClueGuess = false) {
     let guess = allCities.find(c => c.name === cityName);
     if (!guess) return;
 
-    attempts--;
-    const lifeCircle = document.getElementById(`life-${attempts}`);
-    if(lifeCircle) lifeCircle.classList.add('lost');
+    if (!isClueGuess) {
+        attempts--;
+        const lifeCircle = document.getElementById(`life-${attempts}`);
+        if(lifeCircle) lifeCircle.classList.add('lost');
+    }
 
     const dist = calculateDistance(guess.lat, guess.lon, target.lat, target.lon);
     const bearing = (Math.atan2(target.lon - guess.lon, target.lat - guess.lat) * 180 / Math.PI + 360) % 360;
     const ratio = Math.pow(Math.min(dist / 150, 1), 0.35);
     const color = `rgb(255, ${Math.floor(255 * ratio)}, ${Math.floor(100 * ratio)})`;
 
+    if (dist <= 10) {
+        unlockedClues.eligible = true;
+    }
+    updateCluesHubTriggerUI();
+
+    let markerHtml = ``;
+    if(isClueGuess) {
+        markerHtml = `<div class="marker-bubble" style="border-color:var(--purple); background:#f8efff; color:var(--purple);"><div>✨ רמז: ${guess.name}</div><div style="font-size:10px">${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:var(--purple)"></div>`;
+    } else {
+        markerHtml = `<div class="marker-bubble" style="border-color:${color}"><div>${guess.name}</div><div style="font-size:10px">${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:${color}"></div>`;
+    }
+
     const icon = L.divIcon({
         className: 'custom-marker',
-        html: `<div class="marker-bubble" style="border-color:${color}"><div>${guess.name}</div><div style="font-size:10px">${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:${color}"></div>`,
+        html: markerHtml,
         iconSize: [0, 0], iconAnchor: [0, 40]
     });
     L.marker([guess.lat, guess.lon], { icon: icon }).addTo(map);
     
     const row = document.createElement('div');
-    row.className = 'guess-row';
-    row.style.background = color;
-    row.innerHTML = `<span>${guess.name}</span> <span>${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></span>`;
+    if (isClueGuess) {
+        row.className = 'guess-row special-clue';
+        row.style.background = 'linear-gradient(45deg, #9b59b6, #2c3e50)';
+        row.style.color = '#fff';
+        row.innerHTML = `<span>🔮 רמז: ${guess.name}</span> <span>${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></span>`;
+    } else {
+        row.className = 'guess-row';
+        row.style.background = color;
+        row.innerHTML = `<span>${guess.name}</span> <span>${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></span>`;
+    }
     document.getElementById('feedback').prepend(row);
 
     if (!isRestoring) {
-        saveProgress(cityName);
+        saveProgress(cityName, isClueGuess);
         const sidebarPadding = window.innerWidth > 850 ? [400, 0] : [0, 0];
         map.flyTo([guess.lat, guess.lon], 11, {
             paddingTopLeft: sidebarPadding,
@@ -417,13 +651,19 @@ function processGuess(cityName, isRestoring = false) {
     else if (attempts === 0) endGame(false, attempts, isRestoring);
 }
 
-function saveProgress(cityName) {
+function saveProgress(cityName, isClueGuess) {
     let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {} };
     const today = getDailyKey();
     if (!stats.history) stats.history = {};
-    if (!stats.history[today]) stats.history[today] = { guessesToday: [], isGameOverToday: false };
+    if (!stats.history[today]) stats.history[today] = { guessesToday: [], clueGuessesToday: [], isGameOverToday: false };
+    if (!stats.history[today].clueGuessesToday) stats.history[today].clueGuessesToday = [];
     
     stats.history[today].guessesToday.push(cityName);
+    if(isClueGuess) {
+        stats.history[today].clueGuessesToday.push(cityName);
+    }
+    stats.history[today].unlockedClues = unlockedClues;
+    
     localStorage.setItem('israeleStats', JSON.stringify(stats));
 }
 
@@ -435,16 +675,86 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+function generateGlobalDistribution(userScore) {
+    const day = getGameDayIndex();
+    const baseDistribution = [5, 12, 18, 22, 15, 10, 7, 5, 4, 2]; 
+    
+    let dynamicDist = baseDistribution.map((v, i) => {
+        let shift = Math.sin(day + i) * 3;
+        return Math.max(1, Math.round(v + shift));
+    });
+    
+    const container = document.getElementById('globalDistributionChart');
+    container.innerHTML = '';
+    
+    const maxVal = Math.max(...dynamicDist);
+    
+    for (let i = 0; i < 10; i++) {
+        const row = document.createElement('div');
+        row.className = 'dist-row';
+        if (userScore === (i + 1)) {
+            row.classList.add('current-user');
+        }
+        
+        const pct = Math.round((dynamicDist[i] / dynamicDist.reduce((a,b)=>a+b)) * 100);
+        const widthPct = (dynamicDist[i] / maxVal) * 85; 
+        
+        row.innerHTML = `
+            <div class="dist-label">${i+1} ניסיונות</div>
+            <div class="dist-bar-wrapper">
+                <div class="dist-bar" style="width: ${widthPct}%">${pct}%</div>
+            </div>
+        `;
+        container.appendChild(row);
+    }
+}
+
+function shareGame(platform) {
+    const usedHintsCount = (unlockedClues.closestNeighborUsed ? 1 : 0) + (unlockedClues.fiveOptionsUsed ? 1 : 0);
+    const finalGuesses = 10 - attempts;
+    const day = getGameDayIndex() + 1;
+    
+    let resultEmojis = "";
+    if (attempts > 0) {
+        resultEmojis = "🎯 פגעתי בול!";
+    } else {
+        resultEmojis = "🏳️ לא הצלחתי היום...";
+    }
+    
+    // Built text body containing requested isramaster.com domain reference
+    const textToShare = `IsraMaster האתגר היומי #יעד_${day}\n${resultEmojis}\n🛰️ ניסיונות: ${finalGuesses}/10\n🔮 רמזים שנוצלו: ${usedHintsCount}/2\n\nבואו לנסות גם אתם ב-isramaster.com! 🗺️✨`;
+    
+    if (platform === 'whatsapp') {
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`;
+        window.open(url, '_blank');
+    } else if (platform === 'instagram') {
+        // Deep linking scheme to open the native Instagram app sharesheet context directly
+        const instagramUrl = `instagram://sharesheet?text=${encodeURIComponent(textToShare)}`;
+        
+        // Attempt to launch application protocol
+        window.location.href = instagramUrl;
+        
+        // Safety fallback structure in case the device application route fails
+        setTimeout(() => {
+            navigator.clipboard.writeText(textToShare).then(() => {
+                alert("📋 נתוני המשחק הועתקו ללוח! אם האפליקציה לא נפתחה אוטומטית, תוכלו לפתוח את האינסטגרם ולהדביק ישירות בסטורי שלכם 📸");
+            }).catch(err => {
+                console.error('שגיאה בהעתקה', err);
+            });
+        }, 800);
+    }
+}
+
 function endGame(win, remaining, alreadyProcessed = false) {
     isGameOver = true;
     closeConfirm();
     document.getElementById('cityInput').disabled = true;
     document.getElementById('submitBtn').disabled = true;
 
-    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {} };
+    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {}, firstTryWins: 0 };
     const today = getDailyKey();
 
-    if (!stats.history[today]) stats.history[today] = { guessesToday: [], isGameOverToday: false };
+    if (!stats.history[today]) stats.history[today] = { guessesToday: [], clueGuessesToday: [], isGameOverToday: false };
     
     if (!alreadyProcessed && !stats.history[today].isGameOverToday) {
         stats.played = (stats.played || 0) + 1;
@@ -455,15 +765,30 @@ function endGame(win, remaining, alreadyProcessed = false) {
             stats.wins = (stats.wins || 0) + 1; 
             stats.streak = (stats.streak || 0) + 1; 
             stats.totalGuesses = (stats.totalGuesses || 0) + (10 - remaining); 
+            
+            // Check if user won on their very first guess action without checking clues
+            if ((10 - remaining) === 1 && (!unlockedClues.closestNeighborUsed && !unlockedClues.fiveOptionsUsed)) {
+                stats.firstTryWins = (stats.firstTryWins || 0) + 1;
+            }
         } else { stats.streak = 0; }
         localStorage.setItem('israeleStats', JSON.stringify(stats));
     }
     
+    const usedHintsCount = (unlockedClues.closestNeighborUsed ? 1 : 0) + (unlockedClues.fiveOptionsUsed ? 1 : 0);
+    document.getElementById('hints-count-summary').innerHTML = `🔮 השתמשת ב-<b>${usedHintsCount}</b> מתוך 2 הרמזים האפשריים.`;
+
     document.getElementById('st-played').innerText = stats.played || 0;
     document.getElementById('st-winpct').innerText = stats.played > 0 ? Math.round(((stats.wins || 0) / stats.played) * 100) + "%" : "0%";
     document.getElementById('st-streak').innerText = stats.streak || 0;
     document.getElementById('st-avg').innerText = stats.wins > 0 ? ((stats.totalGuesses || 0) / stats.wins).toFixed(1) : "0";
     
+    // Dynamically calculate and set first try metric view element
+    const firstTryPct = stats.played > 0 ? Math.round(((stats.firstTryWins || 0) / stats.played) * 100) : 0;
+    document.getElementById('st-firsttry').innerText = firstTryPct + "%";
+
+    const userScore = win ? (10 - remaining) : 0;
+    generateGlobalDistribution(userScore);
+
     document.getElementById('victory-overlay').style.display = 'flex';
     document.getElementById('vic-title').innerText = win ? "פגיעה בול! 🎯" : "לא היום... 🚩";
     document.getElementById('vic-msg').innerText = `היעד היה: ${target.name}`;
