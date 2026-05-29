@@ -227,6 +227,17 @@ sidebar.addEventListener('touchend', () => {
 
 map.on('click', () => { if(window.innerWidth <= 850) toggleSidebar(false); });
 
+// פונקציה שמחשבת את מספר הימים שחלפו מתאריך ההשקה כדי לקבוע את סדר היישובים המובנים
+function getGameDayIndex() {
+    // תאריך השקה קבוע: ה-29 במאי 2026
+    const startDate = new Date(2026, 4, 29); 
+    const today = new Date();
+    startDate.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+    const diffTime = Math.abs(today - startDate);
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
+
 function getDailyKey() {
     const d = new Date();
     return `v7-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -243,6 +254,9 @@ async function loadData() {
             lon: f.geometry.coordinates[0]
         })).filter(c => c.name !== "");
 
+        // רשימת היישובים המובטחים שלך לסבבים הראשונים
+        const customSequence = ["קבוצת יבנה", "מפלסים", "מנחמיה", "יבנאל", "כנות", "אזור", "נשר", "בית אורן", "באר אורה"];
+
         const validTargets = allCities.filter(city => {
             if (approvedArabCities.includes(city.name)) return true;
             const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
@@ -250,12 +264,27 @@ async function loadData() {
             return !(isExcludedByKeyword || isExcludedByName);
         });
 
-        const seedStr = getDailyKey();
-        let hash = 0;
-        for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
-        const seededRandom = Math.abs(Math.sin(hash));
-        
-        target = validTargets[Math.floor(seededRandom * validTargets.length)];
+        const dayIndex = getGameDayIndex();
+
+        if (dayIndex < customSequence.length) {
+            // בימים הראשונים - שולפים בדיוק לפי הסדר מהרשימה שלך
+            const nextCityName = customSequence[dayIndex];
+            target = allCities.find(c => c.name === nextCityName);
+            
+            // הגנת גיבוי: אם היישוב לא נמצא משום מה ב-GeoJSON, נבחר מהרשימה הכללית
+            if (!target) {
+                target = validTargets[dayIndex % validTargets.length];
+            }
+        } else {
+            // לאחר שהרשימה מסתיימת - עוברים ללוגיקה האקראית הרגילה (תוך סינון היישובים שכבר הופיעו)
+            const remainingTargets = validTargets.filter(city => !customSequence.includes(city.name));
+            const seedStr = getDailyKey();
+            let hash = 0;
+            for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+            const seededRandom = Math.abs(Math.sin(hash));
+            
+            target = remainingTargets[Math.floor(seededRandom * remainingTargets.length)];
+        }
 
         const container = document.getElementById('lifePoints');
         container.innerHTML = '';
@@ -267,6 +296,7 @@ async function loadData() {
         }
         
         const dl = document.getElementById('cityList');
+        dl.innerHTML = '';
         [...new Set(allCities.map(c => c.name))].sort().forEach(name => {
             let o = document.createElement('option'); o.value = name; dl.appendChild(o);
         });
@@ -376,7 +406,6 @@ function processGuess(cityName, isRestoring = false) {
 
     if (!isRestoring) {
         saveProgress(cityName);
-        // FIX: Added padding to account for the sidebar so the point is centered in the visible map
         const sidebarPadding = window.innerWidth > 850 ? [400, 0] : [0, 0];
         map.flyTo([guess.lat, guess.lon], 11, {
             paddingTopLeft: sidebarPadding,
