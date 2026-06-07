@@ -95,7 +95,6 @@
         
         .modal { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 380px; color: #333; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
         
-        /* Adjusted grid template columns to support 4 stats cleanly instead of 5 */
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 15px 0; }
         .stat-val { font-size: 18px; font-weight: 900; color: var(--primary); display: block; }
         .stat-lbl { font-size: 11px; color: #777; line-height: 1.2; font-weight: bold; }
@@ -353,7 +352,7 @@ async function loadData() {
             lon: f.geometry.coordinates[0]
         })).filter(c => c.name !== "");
 
-        const customSequence = ["קבוצת יבנה", "מפלסים", "מנחמיה", "יבנאל", "כנות", "אזור", "נשר", "בית אורן", "באר אורה"];
+        const customSequence = ["קשת", "ערד", "בארות יצחק", "נווה זוהר", "כיסופים", "אירוס", "רישפון", "רשפים", "אבן יהודה", "חריש", "מבוא ביתר", "זנוח", "שובל", "כפר קרע"];
 
         const validTargets = allCities.filter(city => {
             if (approvedArabCities.includes(city.name)) return true;
@@ -678,10 +677,8 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 function generateGlobalDistribution(userScore, gaveUpThisTurn = false) {
     const day = getGameDayIndex();
     
-    // Realistically calibrated geographic trivia metrics (Bell curve distribution shape)
-    // index 0 = 1 attempt, index 9 = 10 attempts
     const baseDistribution = [0.4, 1.8, 4.5, 12.3, 21.0, 24.2, 16.5, 9.2, 5.3, 2.8]; 
-    let baseGaveUp = 13.0; // Realistic standard percentage of players surrendering over difficult maps
+    let baseGaveUp = 13.0; 
     
     let dynamicDist = baseDistribution.map((v, i) => {
         let shift = Math.sin(day + i) * 0.4;
@@ -689,7 +686,6 @@ function generateGlobalDistribution(userScore, gaveUpThisTurn = false) {
     });
     let dynamicGaveUp = Math.max(5.0, baseGaveUp + Math.cos(day) * 2);
     
-    // Total calculation parameters
     const totalSum = dynamicDist.reduce((a, b) => a + b, 0) + dynamicGaveUp;
     
     const container = document.getElementById('globalDistributionChart');
@@ -697,7 +693,6 @@ function generateGlobalDistribution(userScore, gaveUpThisTurn = false) {
     
     const maxVal = Math.max(...dynamicDist, dynamicGaveUp);
     
-    // Generate Rows 1 to 10
     for (let i = 0; i < 10; i++) {
         const row = document.createElement('div');
         row.className = 'dist-row';
@@ -717,7 +712,6 @@ function generateGlobalDistribution(userScore, gaveUpThisTurn = false) {
         container.appendChild(row);
     }
 
-    // Append the newly structural surrendered statistics bar
     const surrenderRow = document.createElement('div');
     surrenderRow.className = 'dist-row';
     if (gaveUpThisTurn) {
@@ -807,7 +801,6 @@ function endGame(win, remaining, alreadyProcessed = false) {
     
     const userScore = win ? (10 - remaining) : 0;
     
-    // Explicit dynamic runtime flag to properly evaluate surrender styling condition rules
     let currentGaveUpFlag = gaveUpThisTurn || (stats.history[today] && !stats.history[today].lastResultWasWin && stats.history[today].lastAttemptsCount > 0);
     generateGlobalDistribution(userScore, currentGaveUpFlag);
 
@@ -840,3 +833,4 @@ window.onload = loadData;
 </script>
 </body>
 </html>
+
