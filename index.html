@@ -89,9 +89,9 @@
         }
         .marker-arrow { font-size: 18px; font-weight: bold; display: inline-block; margin-right: 2px; }
 
-        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
+        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
         #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
-        #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay { background: rgba(0,0,0,0.85); display: none; }
+        #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay { background: rgba(0,0,0,0.85); display: none; }
         
         .modal { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 380px; color: #333; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
         
@@ -122,7 +122,6 @@
         
         .distribution-title { font-size: 14px; font-weight: 800; color: #444; text-align: right; margin: 15px 0 8px 0; border-top: 1px solid #eee; padding-top: 12px; }
         .dist-chart { display: flex; flex-direction: column; gap: 5px; background: #f9f9f9; padding: 10px; border-radius: 12px; text-align: right; }
-        .dist-chart-item { font-size: 12px; font-weight: bold; }
         .dist-row { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: bold; }
         .dist-label { width: 75px; color: #555; text-align: right; white-space: nowrap; flex-shrink: 0; }
         .dist-bar-wrapper { flex: 1; background: #e0e0e0; height: 18px; border-radius: 4px; overflow: hidden; position: relative; }
@@ -196,12 +195,21 @@
     </div>
 </div>
 
+<div id="warning-modal-overlay">
+    <div class="modal">
+        <h3 style="color: var(--accent); margin-top:0;">⚠️ אזהרת סיום משחק!</h3>
+        <p style="font-size:15px; color:#333; line-height:1.5; text-align:right;">פתיחת הרמז תציג בפניכם <b>5 אפשרויות בלבד</b> באזור של היעד.</p>
+        <p style="font-size:14px; color:var(--accent); font-weight:bold; line-height:1.5; text-align:right;">בחירה באחד מחמשת היישובים תהווה את הניחוש האחרון והסופי שלכם ותסיים את המשחק מיידית (ניצחון או הפסד).</p>
+        <button class="btn-main" style="background:var(--purple);" onclick="confirmAndOpenFiveOptions()">אני מבין, הצג את האפשרויות 🔮</button>
+        <button class="btn-main btn-secondary" onclick="document.getElementById('warning-modal-overlay').style.display = 'none'; openCluesHub();">חזרה למרכז הרמזים</button>
+    </div>
+</div>
+
 <div id="clue-modal-overlay">
     <div class="modal">
-        <h3 style="color: var(--accent); margin-top:0;">⚠️ רמז ההזדמנות האחרונה!</h3>
-        <p style="font-size:14px; color:#555; line-height:1.4;">היעד המסתורי הוא <b>אחד מחמשת</b> היישובים הבאים באזור.<br><b style="color:var(--accent);">שימו לב: בחירת אפשרות תהווה את הניחוש האחרון שלכם ותסיים את המשחק מיידית!</b></p>
+        <h3 style="color: var(--purple); margin-top:0;">🧩 בחרו את הניחוש הסופי שלכם:</h3>
+        <p style="font-size:13px; color:#666; margin-bottom:12px;">אחד מהיישובים הבאים הוא היעד האמיתי. בחירה תסיים את המשחק!</p>
         <div class="hint-options-grid" id="hintOptionsContainer"></div>
-        <button class="btn-main btn-secondary" style="margin-top:15px; width:100%;" onclick="document.getElementById('clue-modal-overlay').style.display = 'none'; openCluesHub();">חזרה</button>
     </div>
 </div>
 
@@ -282,6 +290,7 @@ let target;
 let attempts = 10;
 let isGameOver = false;
 let errorTimeout;
+let currentGuessesList = [];
 
 let unlockedClues = { 
     eligible: false, 
@@ -344,7 +353,6 @@ function getDailyKey() {
     return `v7-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
-// Seeded shuffle function to randomize the sequence on initialization while remaining predictable per index
 function seededShuffle(arr, seedString) {
     let hash = 0;
     for (let i = 0; i < seedString.length; i++) {
@@ -509,7 +517,8 @@ function getClosestNeighbor(targetCity) {
     let minDistance = Infinity;
     
     allCities.forEach(c => {
-        if (c.name !== targetCity.name) {
+        // Exclude the target city and any city the player has already guessed
+        if (c.name !== targetCity.name && !currentGuessesList.includes(c.name)) {
             let d = calculateDistance(targetCity.lat, targetCity.lon, c.lat, c.lon);
             if (d < minDistance) {
                 minDistance = d;
@@ -521,8 +530,9 @@ function getClosestNeighbor(targetCity) {
 }
 
 function generateFiveRegionalOptions() {
+    // Filter out target and everything already guessed by the user
     let listWithDistances = allCities
-        .filter(c => c.name !== target.name)
+        .filter(c => c.name !== target.name && !currentGuessesList.includes(c.name))
         .map(c => ({
             name: c.name,
             dist: calculateDistance(target.lat, target.lon, c.lat, c.lon)
@@ -530,7 +540,7 @@ function generateFiveRegionalOptions() {
     
     listWithDistances.sort((a,b) => a.dist - b.dist);
     
-    let options = listWithDistances.slice(1, 5).map(o => o.name);
+    let options = listWithDistances.slice(0, 4).map(o => o.name);
     options.push(target.name);
     
     return options.sort(() => Math.random() - 0.5);
@@ -560,13 +570,13 @@ function openCluesHub() {
         explanation.innerHTML = `🎉 <b>כל הכבוד! הגעתם אל מתחת ל-10 ק"מ!</b><br>בזכות הקרבה המטורפת שלכם ליעד, הרמזים הבאים פתוחים בפניכם:`;
         
         if (!unlockedClues.closestNeighborUsed) {
-            container.innerHTML += `<button class="clue-btn" onclick="useClosestNeighborClue()">🏡 השכן הקרוב ביותר (חינם)</button>`;
+            container.innerHTML += `<button class="clue-btn" onclick="useClosestNeighborClue()">🏡 השכן הקרוב ביותר</button>`;
         } else {
             container.innerHTML += `<button class="clue-btn used" disabled>🏡 רמז השכן הקרוב כבר נוצל ✅</button>`;
         }
 
         if (!unlockedClues.fiveOptionsUsed) {
-            container.innerHTML += `<button class="clue-btn" style="background: linear-gradient(45deg, #e74c3c, #c0392b);" onclick="openFiveOptionsModal()">🧩 1 מתוך 5 אפשרויות (מסיים משחק!)</button>`;
+            container.innerHTML += `<button class="clue-btn" style="background: linear-gradient(45deg, #e74c3c, #c0392b);" onclick="triggerFiveOptionsWarning()">🧩 1 מתוך 5 אפשרויות !)</button>`;
         } else {
             container.innerHTML += `<button class="clue-btn used" disabled>🧩 רמז 5 האפשרויות כבר נוצל ✅</button>`;
         }
@@ -589,9 +599,15 @@ function useClosestNeighborClue() {
     processGuess(neighborName, false, true); 
 }
 
-function openFiveOptionsModal() {
-    if(unlockedClues.fiveOptionsUsed) return;
+function triggerFiveOptionsWarning() {
     closeCluesHub();
+    document.getElementById('warning-modal-overlay').style.display = 'flex';
+}
+
+function confirmAndOpenFiveOptions() {
+    if(unlockedClues.fiveOptionsUsed) return;
+    document.getElementById('warning-modal-overlay').style.display = 'none';
+    
     const container = document.getElementById('hintOptionsContainer');
     container.innerHTML = '';
     
@@ -605,10 +621,8 @@ function openFiveOptionsModal() {
             document.getElementById('clue-modal-overlay').style.display = 'none';
             updateCluesHubTriggerUI();
             
-            // Save state progress with this selected option first
             saveProgress(opt, false);
             
-            // Trigger ending sequence based entirely on whether they picked right or wrong
             if (opt === target.name) {
                 endGame(true, attempts, false);
             } else {
@@ -624,6 +638,10 @@ function openFiveOptionsModal() {
 function processGuess(cityName, isRestoring = false, isClueGuess = false) {
     let guess = allCities.find(c => c.name === cityName);
     if (!guess) return;
+
+    if (!currentGuessesList.includes(cityName)) {
+        currentGuessesList.push(cityName);
+    }
 
     if (!isClueGuess) {
         attempts--;
@@ -804,7 +822,6 @@ function endGame(win, remaining, alreadyProcessed = false) {
     
     let gaveUpThisTurn = (!win && remaining === attempts && attempts > 0);
 
-    // Synchronize global attempts state tracking to match outcome
     attempts = remaining;
 
     if (!alreadyProcessed && !stats.history[today].isGameOverToday) {
