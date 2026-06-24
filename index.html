@@ -381,7 +381,8 @@ async function loadData() {
             lon: f.geometry.coordinates[0]
         })).filter(c => c.name !== "");
 
-        const baseSequence = ["עולש", "טורעאן", "עיילבון", "קרית גת", "עדנים", "נווה ירק", "גן נר", "גינוסר", "אום אל-פחם", "ירוחם", "טובא זנגריה", "כפר הנשיא", "כרי דשא", "איתנים", "לב יתיר", "הר עמשא", "אילת"];
+        // הרשימה החדשה והמעודכנת שהתבקשה, מסודרת מראש בסדר אקראי
+        const baseSequence = ["כרי דשא", "קרית גת", "טורעאן", "אילת", "עיילבון", "גן נר", "טובא זנגריה", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "אום אל-פחם", "הר עמשא", "עולש"];
         const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
 
         const validTargets = allCities.filter(city => {
@@ -517,7 +518,6 @@ function getClosestNeighbor(targetCity) {
     let minDistance = Infinity;
     
     allCities.forEach(c => {
-        // Exclude the target city and any city the player has already guessed
         if (c.name !== targetCity.name && !currentGuessesList.includes(c.name)) {
             let d = calculateDistance(targetCity.lat, targetCity.lon, c.lat, c.lon);
             if (d < minDistance) {
@@ -530,7 +530,6 @@ function getClosestNeighbor(targetCity) {
 }
 
 function generateFiveRegionalOptions() {
-    // Filter out target and everything already guessed by the user
     let listWithDistances = allCities
         .filter(c => c.name !== target.name && !currentGuessesList.includes(c.name))
         .map(c => ({
