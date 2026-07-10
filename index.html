@@ -381,8 +381,8 @@ async function loadData() {
             lon: f.geometry.coordinates[0]
         })).filter(c => c.name !== "");
 
-        // הרשימה החדשה והמעודכנת שהתבקשה, מסודרת מראש בסדר אקראי
-        const baseSequence = ["כרי דשא", "קרית גת", "טורעאן", "אילת", "עיילבון", "גן נר", "טובא זנגריה", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "אום אל-פחם", "הר עמשא", "עולש"];
+        // "עולש" הוחלפה ב"אשקלון" בסוף המערך
+        const baseSequence = ["כרי דשא", "קרית גת", "טורעאן", "אילת", "עיילבון", "גן נר", "טובא זנגריה", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "אום אל-פחם", "הר עמשא", "אשקלון"];
         const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
 
         const validTargets = allCities.filter(city => {
@@ -408,6 +408,12 @@ async function loadData() {
             const seededRandom = Math.abs(Math.sin(hash));
             
             target = remainingTargets[Math.floor(seededRandom * remainingTargets.length)];
+        }
+
+        // דריסה מוחלטת לתאריך 10.7.2026 (היום ה-16 מתחילת הספירה)
+        if (dayIndex === 16) {
+            const forcedTarget = allCities.find(c => c.name === "אשקלון");
+            if (forcedTarget) target = forcedTarget;
         }
 
         const container = document.getElementById('lifePoints');
@@ -883,3 +889,4 @@ window.onload = loadData;
 </script>
 </body>
 </html>
+
