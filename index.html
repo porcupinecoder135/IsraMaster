@@ -298,9 +298,17 @@ let unlockedClues = {
     fiveOptionsUsed: false
 };
 
-const approvedArabCities = ["אום אל-פחם", "באקה אל-גרבייה", "ג'לג'וליה", "נצרת", "סח'נין", "רהט", "שפרעם"];
+// No Arab cities approved as potential daily targets
+const approvedArabCities = [];
+
 const excludeKeywords = ["כפר", "אבו", "עין", "דיר", "משהד", "מג'ד", "חורפיש", "בועיינה", "יאנוח", "ג'ת", "ירכא", "ראמה", "ג'ש", "ביר", "חמאם", "אחסם", "שעב", "דבוריה", "טורעאן", "כאבול", "זמר", "פוריידיס", "ג'סר", "ריינה", "עילוט", "מזרעה", "כסרא", "סמיע", "סאג'ור", "כסלון", "מוקייבלה", "שיבלי", "אום"];
-const extraExclusions = ["פוריידיס", "איכסאל", "נחף", "כאוכב", "ג'לג'וליה", "כפר קאסם", "טירה", "טייבה", "קלנסווה", "ערערה", "חורפיש", "מזרעה", "בוקעאתא", "מג'דל שמס", "מסעדה", "עין קנייה", "לקיה", "תל שבע", "חורה", "כסייפה", "ערערה בנגב", "שגב שלום"];
+
+const extraExclusions = [
+    "פוריידיס", "איכסאל", "נחף", "כאוכב", "ג'לג'וליה", "כפר קאסם", "טירה", "טייבה", 
+    "קלנסווה", "ערערה", "חורפיש", "מזרעה", "בוקעאתא", "מג'דל שמס", "מסעדה", "עין קנייה", 
+    "לקיה", "תל שבע", "חורה", "כסייפה", "ערערה בנגב", "שגב שלום", "אום אל-פחם", 
+    "באקה אל-גרבייה", "נצרת", "סח'נין", "רהט", "שפרעם", "עיילבון", "טובא זנגריה"
+];
 
 const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31.5, 34.8], 8);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
@@ -381,18 +389,10 @@ async function loadData() {
             lon: f.geometry.coordinates[0]
         })).filter(c => c.name !== "");
 
-        // Ensure "מדרשת בן גוריון" exists in dataset with its coordinates
-        let midreshet = allCities.find(c => c.name === "מדרשת בן גוריון");
-        if (!midreshet) {
-            midreshet = { name: "מדרשת בן גוריון", lat: 30.8524, lon: 34.7839 };
-            allCities.push(midreshet);
-        }
-
-        const baseSequence = ["כרי דשא", "קרית גת", "טורעאן", "אילת", "עיילבון", "גן נר", "טובא זנגריה", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "אום אל-פחם", "הר עמשא", "אשקלון"];
+        const baseSequence = ["כרי דשא", "קרית גת", "אילת", "גן נר", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "הר עמשא", "אשקלון"];
         const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
 
         const validTargets = allCities.filter(city => {
-            if (approvedArabCities.includes(city.name)) return true;
             const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
             const isExcludedByName = extraExclusions.includes(city.name);
             return !(isExcludedByKeyword || isExcludedByName);
@@ -415,9 +415,6 @@ async function loadData() {
             
             target = remainingTargets[Math.floor(seededRandom * remainingTargets.length)];
         }
-
-        // דריסה מפורשת עבור היעד להיום למדרשת בן גוריון
-        target = midreshet;
 
         const container = document.getElementById('lifePoints');
         container.innerHTML = '';
