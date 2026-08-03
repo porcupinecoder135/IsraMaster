@@ -298,7 +298,6 @@ let unlockedClues = {
     fiveOptionsUsed: false
 };
 
-// No Arab cities approved as potential daily targets
 const approvedArabCities = [];
 
 const excludeKeywords = ["כפר", "אבו", "עין", "דיר", "משהד", "מג'ד", "חורפיש", "בועיינה", "יאנוח", "ג'ת", "ירכא", "ראמה", "ג'ש", "ביר", "חמאם", "אחסם", "שעב", "דבוריה", "טורעאן", "כאבול", "זמר", "פוריידיס", "ג'סר", "ריינה", "עילוט", "מזרעה", "כסרא", "סמיע", "סאג'ור", "כסלון", "מוקייבלה", "שיבלי", "אום"];
@@ -389,31 +388,56 @@ async function loadData() {
             lon: f.geometry.coordinates[0]
         })).filter(c => c.name !== "");
 
-        const baseSequence = ["כרי דשא", "קרית גת", "אילת", "גן נר", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "הר עמשא", "אשקלון"];
-        const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
+        // --- MANUAL OVERRIDE CHECK ---
+        // 1. Check URL Parameters first (e.g. site.com/?target=חיפה)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTarget = urlParams.get('target');
 
-        const validTargets = allCities.filter(city => {
-            const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
-            const isExcludedByName = extraExclusions.includes(city.name);
-            return !(isExcludedByKeyword || isExcludedByName);
-        });
+        if (urlTarget) {
+            target = allCities.find(c => c.name === urlTarget.trim());
+        }
 
-        const dayIndex = getGameDayIndex();
-
-        if (dayIndex < customSequence.length) {
-            const nextCityName = customSequence[dayIndex];
-            target = allCities.find(c => c.name === nextCityName);
-            if (!target) {
-                target = validTargets[dayIndex % validTargets.length];
+        // 2. Check config.json if no URL override
+        if (!target) {
+            try {
+                const configResp = await fetch('config.json');
+                const configData = await configResp.json();
+                if (configData && configData.manualTarget && configData.manualTarget.trim() !== "") {
+                    target = allCities.find(c => c.name === configData.manualTarget.trim());
+                }
+            } catch (e) {
+                // Ignore missing config file or syntax errors silently
             }
-        } else {
-            const remainingTargets = validTargets.filter(city => !customSequence.includes(city.name));
-            const seedStr = getDailyKey();
-            let hash = 0;
-            for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
-            const seededRandom = Math.abs(Math.sin(hash));
-            
-            target = remainingTargets[Math.floor(seededRandom * remainingTargets.length)];
+        }
+
+        // 3. Fallback to automatic sequence if no manual target is active
+        if (!target) {
+            const baseSequence = ["כרי דשא", "קרית גת", "אילת", "גן נר", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "הר עמשא", "אשקלון"];
+            const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
+
+            const validTargets = allCities.filter(city => {
+                const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
+                const isExcludedByName = extraExclusions.includes(city.name);
+                return !(isExcludedByKeyword || isExcludedByName);
+            });
+
+            const dayIndex = getGameDayIndex();
+
+            if (dayIndex < customSequence.length) {
+                const nextCityName = customSequence[dayIndex];
+                target = allCities.find(c => c.name === nextCityName);
+                if (!target) {
+                    target = validTargets[dayIndex % validTargets.length];
+                }
+            } else {
+                const remainingTargets = validTargets.filter(city => !customSequence.includes(city.name));
+                const seedStr = getDailyKey();
+                let hash = 0;
+                for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+                const seededRandom = Math.abs(Math.sin(hash));
+                
+                target = remainingTargets[Math.floor(seededRandom * remainingTargets.length)];
+            }
         }
 
         const container = document.getElementById('lifePoints');
