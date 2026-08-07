@@ -402,7 +402,6 @@ async function loadData() {
         })).filter(c => c.name !== "");
 
         // --- MANUAL OVERRIDE CHECK ---
-        // 1. Check URL Parameters first (e.g. site.com/?target=חיפה)
         const urlParams = new URLSearchParams(window.location.search);
         const urlTarget = urlParams.get('target');
 
@@ -410,7 +409,6 @@ async function loadData() {
             target = allCities.find(c => c.name === urlTarget.trim());
         }
 
-        // 2. Check config.json if no URL override
         if (!target) {
             try {
                 const configResp = await fetch('config.json');
@@ -419,26 +417,37 @@ async function loadData() {
                     target = allCities.find(c => c.name === configData.manualTarget.trim());
                 }
             } catch (e) {
-                // Ignore missing config file or syntax errors silently
+                // Ignore missing config file
             }
         }
 
-        // 3. Fallback to automatic sequence or randomized list if no manual target is active
+        // --- AUTOMATIC TARGET SELECTION ---
         if (!target) {
             const dayIndex = getGameDayIndex();
             const changeoverIndex = 45; // 8.8.2026
 
             if (dayIndex >= changeoverIndex) {
                 const availablePool = settlementPool.filter(sName => allCities.some(c => c.name === sName));
-                const poolToUse = availablePool.length > 0 ? availablePool : settlementPool;
-                
+                const poolIndex = dayIndex - changeoverIndex;
+
                 const seedStr = getDailyKey();
                 let hash = 0;
                 for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
                 const seededRandom = Math.abs(Math.sin(hash));
-                
-                const chosenName = poolToUse[Math.floor(seededRandom * poolToUse.length)];
-                target = allCities.find(c => c.name === chosenName);
+
+                if (poolIndex < availablePool.length) {
+                    const chosenName = availablePool[poolIndex];
+                    target = allCities.find(c => c.name === chosenName);
+                } else {
+                    // Pool is exhausted -> Revert to picking a completely random settlement OUTSIDE of the pool
+                    const citiesOutsidePool = allCities.filter(c => !settlementPool.includes(c.name));
+                    
+                    if (citiesOutsidePool.length > 0) {
+                        target = citiesOutsidePool[Math.floor(seededRandom * citiesOutsidePool.length)];
+                    } else {
+                        target = allCities[Math.floor(seededRandom * allCities.length)];
+                    }
+                }
             } else {
                 const baseSequence = ["כרי דשא", "קרית גת", "אילת", "גן נר", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "הר עמשא", "אשקלון"];
                 const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
