@@ -298,6 +298,19 @@ let unlockedClues = {
     fiveOptionsUsed: false
 };
 
+const settlementPool = [
+    "דגניה א", "משמר העמק", "עין גדי", "יטבתה", "שדה בוקר", "יחיעם", "עין שמר", "גן שמר", "מרחביה", "נחשולים", 
+    "צרעה", "עין חרוד", "רמת רחל", "גליל ים", "כפר ויתקין", "בית יצחק", "משמר השרון", "כפר מל\"ל", "עין ורד", "בצרה", 
+    "רשפון", "שפיים", "גאולים", "שער העמקים", "אלונים", "עין השופט", "דליה", "חניתה", "אילון", "מצובה", 
+    "כפר גלעדי", "תל חי", "איילת השחר", "חולתה", "עמיר", "כפר בלום", "דן", "דפנה", "שדה נחמיה", "הגושרים", 
+    "מעיין ברוך", "יפתח", "מלכיה", "מנרה", "משגב עם", "ראש הנקרה", "סער", "עברון", "כברי", "לוחמי הגטאות", 
+    "שבי ציון", "בוסתן הגליל", "אפק", "עין המפרץ", "כפר מסריק", "שמרת", "יסעור", "אחיהוד", "מסילות", "ניר דוד", 
+    "טירת צבי", "שדה אליהו", "עין הנציב", "חפציבה", "בית אלפא", "גבע", "עין חרוד מאוחד", "עין חרוד איחוד", "תל יוסף", "מולדת", 
+    "רמת צבי", "כפר יחזקאל", "גדעונה", "נורית", "מגן", "בארי", "כפר עזה", "נחל עוז", "נירים", "ניר עוז", 
+    "כיסופים", "עין השלושה", "רעים", "חולית", "כרם שלום", "סופה", "סח'נין", "אום אל-פחם", "טייבה", "טירה", 
+    "באקה אל-גרבייה", "כפר קאסם", "ערערה", "ג'סר א-זרקא", "פוריידיס", "ג'לג'וליה"
+];
+
 const approvedArabCities = [];
 
 const excludeKeywords = ["כפר", "אבו", "עין", "דיר", "משהד", "מג'ד", "חורפיש", "בועיינה", "יאנוח", "ג'ת", "ירכא", "ראמה", "ג'ש", "ביר", "חמאם", "אחסם", "שעב", "דבוריה", "טורעאן", "כאבול", "זמר", "פוריידיס", "ג'סר", "ריינה", "עילוט", "מזרעה", "כסרא", "סמיע", "סאג'ור", "כסלון", "מוקייבלה", "שיבלי", "אום"];
@@ -410,33 +423,47 @@ async function loadData() {
             }
         }
 
-        // 3. Fallback to automatic sequence if no manual target is active
+        // 3. Fallback to automatic sequence or randomized list if no manual target is active
         if (!target) {
-            const baseSequence = ["כרי דשא", "קרית גת", "אילת", "גן נר", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "הר עמשא", "אשקלון"];
-            const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
-
-            const validTargets = allCities.filter(city => {
-                const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
-                const isExcludedByName = extraExclusions.includes(city.name);
-                return !(isExcludedByKeyword || isExcludedByName);
-            });
-
             const dayIndex = getGameDayIndex();
+            const changeoverIndex = 45; // 8.8.2026
 
-            if (dayIndex < customSequence.length) {
-                const nextCityName = customSequence[dayIndex];
-                target = allCities.find(c => c.name === nextCityName);
-                if (!target) {
-                    target = validTargets[dayIndex % validTargets.length];
-                }
-            } else {
-                const remainingTargets = validTargets.filter(city => !customSequence.includes(city.name));
+            if (dayIndex >= changeoverIndex) {
+                const availablePool = settlementPool.filter(sName => allCities.some(c => c.name === sName));
+                const poolToUse = availablePool.length > 0 ? availablePool : settlementPool;
+                
                 const seedStr = getDailyKey();
                 let hash = 0;
                 for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
                 const seededRandom = Math.abs(Math.sin(hash));
                 
-                target = remainingTargets[Math.floor(seededRandom * remainingTargets.length)];
+                const chosenName = poolToUse[Math.floor(seededRandom * poolToUse.length)];
+                target = allCities.find(c => c.name === chosenName);
+            } else {
+                const baseSequence = ["כרי דשא", "קרית גת", "אילת", "גן נר", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "הר עמשא", "אשקלון"];
+                const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
+
+                const validTargets = allCities.filter(city => {
+                    const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
+                    const isExcludedByName = extraExclusions.includes(city.name);
+                    return !(isExcludedByKeyword || isExcludedByName);
+                });
+
+                if (dayIndex < customSequence.length) {
+                    const nextCityName = customSequence[dayIndex];
+                    target = allCities.find(c => c.name === nextCityName);
+                    if (!target) {
+                        target = validTargets[dayIndex % validTargets.length];
+                    }
+                } else {
+                    const remainingTargets = validTargets.filter(city => !customSequence.includes(city.name));
+                    const seedStr = getDailyKey();
+                    let hash = 0;
+                    for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+                    const seededRandom = Math.abs(Math.sin(hash));
+                    
+                    target = remainingTargets[Math.floor(seededRandom * remainingTargets.length)];
+                }
             }
         }
 
