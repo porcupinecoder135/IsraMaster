@@ -29,6 +29,7 @@
             --purple: #9b59b6;
             --cyan: #00cec9;
             --sidebar-width: 400px;
+            --marker-scale: 1;
         }
 
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; background: #eee; }
@@ -81,17 +82,88 @@
         input { padding: 15px; border: 2px solid rgba(255,255,255,0.2); border-radius:15px; background: rgba(255,255,255,0.1); font-size: 16px; color: white; width: 100%; box-sizing: border-box; outline: none; }
 
         .custom-marker { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; }
-        .marker-dot { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.6); z-index: 2; }
+        .marker-dot {
+            width: calc(16px * var(--marker-scale)); height: calc(16px * var(--marker-scale)); border-radius: 50%;
+            border: 2.5px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.6); z-index: 2;
+        }
         .marker-bubble {
-            background: white; color: #222; padding: 8px 14px; border-radius: 12px; font-size: 15px; font-weight: 900;
+            background: white; color: #222; padding: calc(8px * var(--marker-scale)) calc(14px * var(--marker-scale));
+            border-radius: 12px; font-size: calc(15px * var(--marker-scale)); font-weight: 900;
             white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 2px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.25); border: 2.5px solid transparent; margin-bottom: 6px;
+            transition: font-size 0.15s ease, padding 0.15s ease;
         }
-        .marker-arrow { font-size: 18px; font-weight: bold; display: inline-block; margin-right: 2px; }
+        .marker-arrow { font-size: calc(18px * var(--marker-scale)); font-weight: bold; display: inline-block; margin-right: 2px; }
+        .marker-distance { font-size: calc(12px * var(--marker-scale)); font-weight: 800; transition: font-size 0.15s ease; }
 
-        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
+        #settings-toggle {
+            position: fixed; top: 15px; left: 15px; z-index: 2005;
+            background: var(--dark); color: white; border: 2px solid rgba(255,255,255,0.25);
+            width: 52px; height: 52px; border-radius: 50%; font-size: 24px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center;
+        }
+        #settings-toggle:active { transform: scale(0.95); }
+
+        .settings-row { margin: 25px 0; }
+        .settings-row-labels { display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; color: #555; margin-bottom: 10px; }
+        #markerScaleSlider { width: 100%; height: 12px; cursor: pointer; accent-color: var(--accent); }
+        .marker-preview-box {
+            display: flex; justify-content: center; align-items: center; padding: 25px 10px; background: #f2f2f2;
+            border-radius: 15px; margin-top: 15px; min-height: 90px;
+        }
+
+        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #tutorial-intro-overlay, #settings-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
         #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
-        #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay { background: rgba(0,0,0,0.85); display: none; }
+        #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #settings-overlay { background: rgba(0,0,0,0.85); display: none; }
+
+        #tutorial-intro-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); z-index: 3200; display: none; }
+        .tutorial-modal {
+            background: white; color: #222; padding: 35px 25px; border-radius: 28px; width: 90%; max-width: 460px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); box-sizing: border-box; position: relative;
+        }
+        #tutorial-skip-global {
+            position: fixed; top: 16px; right: 16px; z-index: 3400; background: #fff; color: #333; border: none;
+            padding: 12px 18px; border-radius: 22px; font-size: 15px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.35); display: none;
+        }
+        #tutorial-skip-global:active { transform: scale(0.96); }
+        .tutorial-icon { font-size: 60px; line-height: 1; margin-top: 15px; margin-bottom: 10px; }
+        .tutorial-title { font-size: 26px; font-weight: 900; margin: 10px 0; color: var(--primary); line-height: 1.3; }
+        .tutorial-text { font-size: 19px; line-height: 1.6; color: #333; margin: 0 0 15px 0; font-weight: 500; }
+        .tutorial-dots { display: flex; justify-content: center; gap: 8px; margin: 15px 0 20px 0; }
+        .tutorial-dot { width: 11px; height: 11px; border-radius: 50%; background: #ddd; transition: all 0.2s; }
+        .tutorial-dot.active { background: var(--accent); width: 26px; border-radius: 8px; }
+        .tutorial-nav { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-tutorial-next {
+            flex: 2; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 16px;
+            cursor: pointer; font-weight: 900; font-size: 19px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .btn-tutorial-next:active { transform: scale(0.98); }
+        .btn-tutorial-prev {
+            flex: 1; padding: 18px; background: #eee; color: #444; border: none; border-radius: 16px;
+            cursor: pointer; font-weight: 900; font-size: 19px;
+        }
+
+        /* --- Spotlight (real-time) tutorial layer --- */
+        #spotlight-layer { position: fixed; inset: 0; z-index: 3250; display: none; pointer-events: none; }
+        .spotlight-dimmer { position: fixed; background: rgba(0,0,0,0.78); pointer-events: auto; transition: all 0.25s ease; }
+        .spotlight-ring {
+            position: fixed; border: 3px solid var(--accent); border-radius: 18px; pointer-events: none;
+            box-shadow: 0 0 0 6px rgba(244,67,54,0.35), 0 0 25px rgba(244,67,54,0.6);
+            transition: all 0.25s ease; z-index: 3260; animation: spotlight-pulse 1.4s ease-in-out infinite;
+        }
+        @keyframes spotlight-pulse {
+            0%, 100% { box-shadow: 0 0 0 6px rgba(244,67,54,0.35), 0 0 25px rgba(244,67,54,0.6); }
+            50% { box-shadow: 0 0 0 10px rgba(244,67,54,0.2), 0 0 35px rgba(244,67,54,0.85); }
+        }
+        .spotlight-tooltip {
+            position: fixed; z-index: 3270; background: white; color: #222; border-radius: 20px; padding: 20px;
+            width: 90%; max-width: 340px; box-shadow: 0 15px 40px rgba(0,0,0,0.45); box-sizing: border-box;
+            pointer-events: auto; visibility: hidden;
+        }
+        .spotlight-tooltip .tutorial-title { font-size: 21px; margin: 0 0 8px 0; }
+        .spotlight-tooltip .tutorial-text { font-size: 16.5px; margin: 0 0 12px 0; }
+        .spotlight-tooltip .tutorial-dots { margin: 8px 0 14px 0; }
         
         .modal { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 380px; color: #333; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
         
@@ -163,6 +235,9 @@
             #sidebar.transitioning { transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1); }
             .swipe-handle { display: block; }
             #mobile-toggle { display: block; }
+            .tutorial-title { font-size: 22px; }
+            .tutorial-text { font-size: 17px; }
+            .tutorial-icon { font-size: 48px; }
         }
     </style>
 </head>
@@ -230,7 +305,64 @@
     </div>
 </div>
 
+<button id="tutorial-skip-global" onclick="skipTutorial()">דלג על סיור ⏭️</button>
+
+<div id="tutorial-intro-overlay">
+    <div class="tutorial-modal">
+        <div class="tutorial-icon" id="tutorial-icon"></div>
+        <div class="tutorial-title" id="tutorial-title"></div>
+        <div class="tutorial-text" id="tutorial-text"></div>
+        <div class="tutorial-dots" id="tutorial-dots"></div>
+        <div class="tutorial-nav">
+            <button class="btn-tutorial-prev" id="tutorial-prev" onclick="tutorialPrev()">חזרה ➡️</button>
+            <button class="btn-tutorial-next" id="tutorial-next" onclick="tutorialNext()">הבא ⬅️</button>
+        </div>
+    </div>
+</div>
+
+<div id="spotlight-layer">
+    <div class="spotlight-dimmer" id="sp-dim-top"></div>
+    <div class="spotlight-dimmer" id="sp-dim-bottom"></div>
+    <div class="spotlight-dimmer" id="sp-dim-left"></div>
+    <div class="spotlight-dimmer" id="sp-dim-right"></div>
+    <div class="spotlight-ring" id="sp-ring"></div>
+    <div class="spotlight-tooltip" id="sp-tooltip">
+        <div class="tutorial-title" id="tutorial-title-s"></div>
+        <div class="tutorial-text" id="tutorial-text-s"></div>
+        <div class="tutorial-dots" id="tutorial-dots-s"></div>
+        <div class="tutorial-nav">
+            <button class="btn-tutorial-prev" id="tutorial-prev-s" onclick="tutorialPrev()">חזרה ➡️</button>
+            <button class="btn-tutorial-next" id="tutorial-next-s" onclick="tutorialNext()">הבא ⬅️</button>
+        </div>
+    </div>
+</div>
+
+<div id="settings-overlay">
+    <div class="modal">
+        <h2 style="margin-top:0;">⚙️ הגדרות תצוגה</h2>
+        <p style="font-size:16px; color:#555; text-align:right; line-height:1.5;">גררו את המחוון כדי להתאים את גודל שמות היישובים, החצים והמרחק המוצגים על המפה.</p>
+        <div class="settings-row">
+            <div class="settings-row-labels">
+                <span>קטן</span>
+                <span>גדול 🔎</span>
+            </div>
+            <input type="range" id="markerScaleSlider" min="0.7" max="1.8" step="0.1" value="1" oninput="updateMarkerScale(this.value)">
+        </div>
+        <div class="marker-preview-box">
+            <div class="custom-marker">
+                <div class="marker-bubble" style="border-color:#f44336;">
+                    <div>דוגמת יישוב</div>
+                    <div class="marker-distance">12.3 ק"מ <span class="marker-arrow" style="transform:rotate(45deg); display:inline-block;">⬆️</span></div>
+                </div>
+                <div class="marker-dot" style="background-color:#f44336;"></div>
+            </div>
+        </div>
+        <button class="btn-main" style="margin-top:20px;" onclick="closeSettings()">סגירה ✅</button>
+    </div>
+</div>
+
 <button id="mobile-toggle" onclick="toggleSidebar(true)">ניחוש 📊</button>
+<button id="settings-toggle" onclick="openSettings()" title="הגדרות תצוגה">⚙️</button>
 
 <div id="sidebar">
     <div class="swipe-handle" id="swipeHandle"></div>
@@ -312,6 +444,21 @@ const settlementPool = [
 ];
 
 const approvedArabCities = [];
+
+// --- CITY NAME ALIASES ---
+// Official city names stay as-is (e.g. "תל אביב-יפו"), but players can type
+// the shorter, more common form and it will still be recognized correctly.
+const cityAliases = {
+    "תל אביב": "תל אביב-יפו",
+    "פרדס חנה": "פרדס חנה-כרכור",
+    "מודיעין": "מודיעין-מכבים-רעות"
+};
+
+function resolveCityName(val) {
+    if (allCities.some(c => c.name === val)) return val;
+    if (cityAliases[val]) return cityAliases[val];
+    return val;
+}
 
 const excludeKeywords = ["כפר", "אבו", "עין", "דיר", "משהד", "מג'ד", "חורפיש", "בועיינה", "יאנוח", "ג'ת", "ירכא", "ראמה", "ג'ש", "ביר", "חמאם", "אחסם", "שעב", "דבוריה", "טורעאן", "כאבול", "זמר", "פוריידיס", "ג'סר", "ריינה", "עילוט", "מזרעה", "כסרא", "סמיע", "סאג'ור", "כסלון", "מוקייבלה", "שיבלי", "אום"];
 
@@ -539,10 +686,11 @@ function clearErrorOnType() {
 
 function makeGuess() {
     const input = document.getElementById('cityInput');
-    const val = input.value.trim();
+    const rawVal = input.value.trim();
     const errorDiv = document.getElementById('errorMsg');
-    if (!val || isGameOver) return;
-    
+    if (!rawVal || isGameOver) return;
+
+    const val = resolveCityName(rawVal);
     const guess = allCities.find(c => c.name === val);
     
     if (!guess) {
@@ -726,9 +874,9 @@ function processGuess(cityName, isRestoring = false, isClueGuess = false) {
 
     let markerHtml = ``;
     if(isClueGuess) {
-        markerHtml = `<div class="marker-bubble" style="border-color:var(--purple); background:#f8efff; color:var(--purple);"><div>✨ רמז: ${guess.name}</div><div style="font-size:12px; font-weight: 800;">${dist.toFixed(1)} ק"מ <span class="marker-arrow" style="transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:var(--purple)"></div>`;
+        markerHtml = `<div class="marker-bubble" style="border-color:var(--purple); background:#f8efff; color:var(--purple);"><div>✨ רמז: ${guess.name}</div><div class="marker-distance">${dist.toFixed(1)} ק"מ <span class="marker-arrow" style="transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:var(--purple)"></div>`;
     } else {
-        markerHtml = `<div class="marker-bubble" style="border-color:${color}"><div>${guess.name}</div><div style="font-size:12px; font-weight: 800;">${dist.toFixed(1)} ק"מ <span class="marker-arrow" style="transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:${color}"></div>`;
+        markerHtml = `<div class="marker-bubble" style="border-color:${color}"><div>${guess.name}</div><div class="marker-distance">${dist.toFixed(1)} ק"מ <span class="marker-arrow" style="transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:${color}"></div>`;
     }
 
     const icon = L.divIcon({
@@ -939,12 +1087,243 @@ function toggleSidebar(forceOpen) {
     else sidebar.classList.toggle('open');
 }
 
-function startGame() { document.getElementById('setup-overlay').style.display = 'none'; }
+function startGame() {
+    document.getElementById('setup-overlay').style.display = 'none';
+    if (!localStorage.getItem('israeleTutorialSeen')) {
+        showTutorial();
+    }
+}
 function toggleInstructions(show) { document.getElementById('how-to-play-overlay').style.display = show ? 'flex' : 'none'; }
 function hideOverlay() { document.getElementById('victory-overlay').style.display = 'none'; }
 function showConfirm() { if(!isGameOver) document.getElementById('confirm-overlay').style.display = 'flex'; }
 function closeConfirm() { document.getElementById('confirm-overlay').style.display = 'none'; }
 
+// --- FIRST-TIME PLAYER WALKTHROUGH (real-time spotlight tour) ---
+// type "intro"/"outro" = centered welcome/goodbye card.
+// type "spotlight" = dims the whole screen except the real UI element (targetId),
+// draws a glowing ring around it, and shows a tooltip explaining what to do.
+// actionEvent (optional) = if the player actually performs this real action on the
+// real element (e.g. clicks the real button), the tour advances automatically.
+const tutorialSteps = [
+    {
+        type: "intro",
+        icon: "👋",
+        title: "ברוכים הבאים ל-IsraMaster!",
+        text: "עכשיו נעביר אתכם על המסך האמיתי, שלב אחר שלב, ונראה לכם בדיוק איפה ללחוץ ומה לעשות. בואו נתחיל!"
+    },
+    {
+        type: "spotlight",
+        targetId: "cityInput",
+        title: "שלב 1: לחצו כאן",
+        text: "זו תיבת ההקלדה. לחצו עליה עם האצבע או העכבר כדי להתחיל להקליד את שם היישוב שאתם מנחשים.",
+        actionEvent: "focus"
+    },
+    {
+        type: "spotlight",
+        targetId: "submitBtn",
+        title: "שלב 2: שליחת הניחוש",
+        text: "אחרי שבחרתם יישוב מתוך הרשימה שנפתחת, לחצו על הכפתור הגדול הזה כדי לשלוח את הניחוש. שימו לב: זה ניחוש אמיתי במשחק!",
+        actionEvent: "click"
+    },
+    {
+        type: "spotlight",
+        targetId: "map",
+        title: "שלב 3: קראו את המפה",
+        text: "כאן על המפה יופיע סמן צבעוני במקום שניחשתם. אדום חזק = קרוב מאוד ליעד. צהוב בהיר = רחוק. חץ קטן יראה לכם באיזה כיוון היעד האמיתי נמצא."
+    },
+    {
+        type: "spotlight",
+        targetId: "lifePoints",
+        title: "שלב 4: עקבו אחרי הניסיונות",
+        text: "כל עיגול קטן כאן מייצג ניסיון שנשאר לכם. יש לכם 10 ניסיונות בסך הכל כדי לנחש נכון את היישוב."
+    },
+    {
+        type: "spotlight",
+        targetId: "clue-hub-trigger",
+        title: "שלב 5: רמזים מיוחדים",
+        text: "אם תתקרבו עד 10 ק\"מ מהיעד, הכפתור הזה יתחיל להבהב. לחצו עליו כדי לפתוח את מרכז הרמזים ולקבל עזרה נוספת.",
+        actionEvent: "click"
+    },
+    {
+        type: "outro",
+        icon: "🎉",
+        title: "מוכנים להתחיל!",
+        text: "זהו, זה כל מה שצריך לדעת! לחצו על הכפתור למטה כדי להמשיך לשחק. בהצלחה!"
+    }
+];
+let tutorialIndex = 0;
+let currentStepCleanup = null;
+
+function showTutorial() {
+    tutorialIndex = 0;
+    document.getElementById('tutorial-skip-global').style.display = 'block';
+    renderTutorialStep();
+}
+
+function buildDots(containerId) {
+    const dotsContainer = document.getElementById(containerId);
+    dotsContainer.innerHTML = '';
+    tutorialSteps.forEach((_, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'tutorial-dot' + (i === tutorialIndex ? ' active' : '');
+        dotsContainer.appendChild(dot);
+    });
+}
+
+function renderTutorialStep() {
+    if (currentStepCleanup) { currentStepCleanup(); currentStepCleanup = null; }
+    const step = tutorialSteps[tutorialIndex];
+
+    if (step.type === 'spotlight') {
+        prepareSpotlightUI(step, () => showSpotlightStep(step));
+    } else {
+        document.getElementById('spotlight-layer').style.display = 'none';
+        showCenterStep(step);
+    }
+}
+
+function showCenterStep(step) {
+    document.getElementById('tutorial-intro-overlay').style.display = 'flex';
+    document.getElementById('tutorial-icon').innerText = step.icon || '';
+    document.getElementById('tutorial-title').innerText = step.title;
+    document.getElementById('tutorial-text').innerText = step.text;
+
+    document.getElementById('tutorial-prev').style.visibility = tutorialIndex === 0 ? 'hidden' : 'visible';
+    document.getElementById('tutorial-next').innerText = tutorialIndex === tutorialSteps.length - 1 ? 'התחלת המשחק! 🎮' : 'הבא ⬅️';
+    buildDots('tutorial-dots');
+}
+
+function prepareSpotlightUI(step, callback) {
+    const isMobile = window.innerWidth <= 850;
+    if (!isMobile) { callback(); return; }
+    if (step.targetId === 'map') {
+        toggleSidebar(false);
+    } else {
+        toggleSidebar(true);
+    }
+    setTimeout(callback, 380);
+}
+
+function showSpotlightStep(step) {
+    document.getElementById('tutorial-intro-overlay').style.display = 'none';
+    document.getElementById('spotlight-layer').style.display = 'block';
+
+    document.getElementById('tutorial-title-s').innerText = step.title;
+    document.getElementById('tutorial-text-s').innerText = step.text;
+    document.getElementById('tutorial-prev-s').style.visibility = tutorialIndex === 0 ? 'hidden' : 'visible';
+    document.getElementById('tutorial-next-s').innerText = tutorialIndex === tutorialSteps.length - 1 ? 'הבא ⬅️' : 'הבא ⬅️';
+    buildDots('tutorial-dots-s');
+
+    const targetEl = document.getElementById(step.targetId);
+    if (!targetEl) { tutorialNext(); return; }
+
+    const position = () => positionSpotlight(targetEl);
+    position();
+
+    const resizeHandler = () => position();
+    window.addEventListener('resize', resizeHandler);
+
+    let actionHandler = null;
+    if (step.actionEvent) {
+        actionHandler = () => tutorialNext();
+        targetEl.addEventListener(step.actionEvent, actionHandler, { once: true });
+    }
+
+    currentStepCleanup = () => {
+        window.removeEventListener('resize', resizeHandler);
+        if (actionHandler) targetEl.removeEventListener(step.actionEvent, actionHandler);
+    };
+}
+
+function positionSpotlight(targetEl) {
+    const pad = 10;
+    const rect = targetEl.getBoundingClientRect();
+    const hole = {
+        top: Math.max(rect.top - pad, 0),
+        left: Math.max(rect.left - pad, 0),
+        width: rect.width + pad * 2,
+        height: rect.height + pad * 2
+    };
+
+    const ring = document.getElementById('sp-ring');
+    ring.style.top = hole.top + 'px';
+    ring.style.left = hole.left + 'px';
+    ring.style.width = hole.width + 'px';
+    ring.style.height = hole.height + 'px';
+
+    document.getElementById('sp-dim-top').style.cssText = `top:0; left:0; width:100vw; height:${hole.top}px;`;
+    document.getElementById('sp-dim-bottom').style.cssText = `top:${hole.top + hole.height}px; left:0; width:100vw; height:calc(100vh - ${hole.top + hole.height}px);`;
+    document.getElementById('sp-dim-left').style.cssText = `top:${hole.top}px; left:0; width:${hole.left}px; height:${hole.height}px;`;
+    document.getElementById('sp-dim-right').style.cssText = `top:${hole.top}px; left:${hole.left + hole.width}px; width:calc(100vw - ${hole.left + hole.width}px); height:${hole.height}px;`;
+
+    const tooltip = document.getElementById('sp-tooltip');
+    tooltip.style.visibility = 'hidden';
+    requestAnimationFrame(() => {
+        const tw = tooltip.offsetWidth;
+        const th = tooltip.offsetHeight;
+        let top = hole.top + hole.height + 18;
+        if (top + th > window.innerHeight - 10) {
+            top = hole.top - th - 18;
+            if (top < 10) top = Math.max(10, window.innerHeight - th - 10);
+        }
+        let left = hole.left + hole.width / 2 - tw / 2;
+        left = Math.min(Math.max(left, 12), window.innerWidth - tw - 12);
+        tooltip.style.top = top + 'px';
+        tooltip.style.left = left + 'px';
+        tooltip.style.visibility = 'visible';
+    });
+}
+
+function tutorialNext() {
+    if (tutorialIndex < tutorialSteps.length - 1) {
+        tutorialIndex++;
+        renderTutorialStep();
+    } else {
+        finishTutorial();
+    }
+}
+
+function tutorialPrev() {
+    if (tutorialIndex > 0) {
+        tutorialIndex--;
+        renderTutorialStep();
+    }
+}
+
+function finishTutorial() {
+    if (currentStepCleanup) { currentStepCleanup(); currentStepCleanup = null; }
+    localStorage.setItem('israeleTutorialSeen', '1');
+    document.getElementById('tutorial-intro-overlay').style.display = 'none';
+    document.getElementById('spotlight-layer').style.display = 'none';
+    document.getElementById('tutorial-skip-global').style.display = 'none';
+    if (window.innerWidth <= 850) toggleSidebar(false);
+}
+
+function skipTutorial() {
+    finishTutorial();
+}
+
+// --- MAP LABEL SIZE SETTINGS ---
+function openSettings() {
+    document.getElementById('settings-overlay').style.display = 'flex';
+}
+function closeSettings() {
+    document.getElementById('settings-overlay').style.display = 'none';
+}
+function updateMarkerScale(val) {
+    document.documentElement.style.setProperty('--marker-scale', val);
+    localStorage.setItem('israeleMarkerScale', val);
+}
+function applySavedMarkerScale() {
+    const saved = localStorage.getItem('israeleMarkerScale');
+    if (saved) {
+        document.documentElement.style.setProperty('--marker-scale', saved);
+        const slider = document.getElementById('markerScaleSlider');
+        if (slider) slider.value = saved;
+    }
+}
+
+applySavedMarkerScale();
 window.onload = loadData;
 </script>
 </body>
