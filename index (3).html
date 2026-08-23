@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SF4RWN0R10"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-SF4RWN0R10');
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IsraMaster - אתגר גאוגרפיה יומי</title>
+    
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="theme-color" content="#1a2a6c">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Firebase SDKs for Realtime Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #1a2a6c;
+            --accent: #f44336;
+            --gold: #ffd700;
+            --silver: #c0c0c0;
+            --bronze: #cd7f32;
+            --success: #2ecc71;
+            --dark: #2c3e50;
+            --purple: #9b59b6;
+            --cyan: #00cec9;
+            --sidebar-width: 400px;
+            --marker-scale: 1;
+        }
+
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; background: #eee; }
+        body { display: flex; flex-direction: row; }
+
+        #sidebar { 
+            width: var(--sidebar-width); height: 100vh; background: var(--dark); 
+            box-shadow: 5px 0 15px rgba(0,0,0,0.2); padding: 20px; 
+            box-sizing: border-box; z-index: 2100; overflow-y: auto; 
+            display: flex; flex-direction: column; color: white;
+            transition: transform 0.3s ease-out;
+        }
+
+        #map { flex: 1; height: 100vh; background: #cad7d0; z-index: 1; }
+
+        #mobile-toggle {
+            display: none; position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+            z-index: 2005; background: var(--dark); color: white; border: 2px solid var(--accent);
+            padding: 12px 35px; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .swipe-handle {
+            display: none; width: 50px; height: 6px; background: rgba(255,255,255,0.3);
+            border-radius: 10px; margin: -5px auto 15px auto; padding: 10px 0; background-clip: content-box;
+        }
+
+        .error-container { min-height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+        #errorMsg { 
+            width: 100%; min-height: 45px; color: #fff; font-size: 14px; opacity: 0; 
+            text-align: center; font-weight: bold; background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 12px;
+            transition: all 0.3s ease; transform: translateY(5px);
+            display: flex; flex-direction: column; justify-content: center; pointer-events: none;
+        }
+        #errorMsg.visible { opacity: 1; transform: translateY(0); background: rgba(244, 67, 54, 0.35); border-color: var(--accent); pointer-events: auto;}
+        #errorMsg.suggestion-active { background: rgba(46, 204, 113, 0.2); border-color: var(--success); }
+        .suggestion-link { text-decoration: none; color: var(--gold); display: inline-block; margin-top: 5px; cursor: pointer; padding: 3px 10px; background: rgba(255,255,255,0.1); border-radius: 6px; }
+
+        .shake { animation: shake 0.4s both; border: 2px solid var(--accent) !important; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+
+        .stats-card { text-align: center; margin-bottom: 10px; }
+        .life-container { display: flex; justify-content: center; gap: 6px; margin-top: 5px; }
+        .life-circle { width: 10px; height: 10px; background: var(--gold); border-radius: 50%; transition: 0.3s; }
+        .life-circle.lost { background: rgba(255,255,255,0.1); transform: scale(0.7); box-shadow: none; }
+
+        .btn-main { padding: 15px; background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease; }
+        .btn-main:active { transform: scale(0.98); }
+        .btn-secondary { background: #555; margin-top: 5px; }
+        input { padding: 15px; border: 2px solid rgba(255,255,255,0.2); border-radius:15px; background: rgba(255,255,255,0.1); font-size: 16px; color: white; width: 100%; box-sizing: border-box; outline: none; }
+
+        .custom-marker { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; }
+        .marker-dot {
+            width: calc(16px * var(--marker-scale)); height: calc(16px * var(--marker-scale)); border-radius: 50%;
+            border: 2.5px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.6); z-index: 2;
+        }
+        .marker-bubble {
+            background: white; color: #222; padding: calc(8px * var(--marker-scale)) calc(14px * var(--marker-scale));
+            border-radius: 12px; font-size: calc(15px * var(--marker-scale)); font-weight: 900;
+            white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25); border: 2.5px solid transparent; margin-bottom: 6px;
+            transition: font-size 0.15s ease, padding 0.15s ease;
+        }
+        .marker-arrow { font-size: calc(18px * var(--marker-scale)); font-weight: bold; display: inline-block; margin-right: 2px; }
+        .marker-distance { font-size: calc(12px * var(--marker-scale)); font-weight: 800; transition: font-size 0.15s ease; }
+
+        #settings-toggle {
+            position: fixed; top: 15px; left: 15px; z-index: 2005;
+            background: var(--dark); color: white; border: 2px solid rgba(255,255,255,0.25);
+            width: 52px; height: 52px; border-radius: 50%; font-size: 24px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center;
+        }
+        #settings-toggle:active { transform: scale(0.95); }
+
+        #leaderboard-toggle {
+            position: fixed; top: 77px; left: 15px; z-index: 2005;
+            background: var(--accent); color: white; border: 2px solid rgba(255,255,255,0.25);
+            width: 52px; height: 52px; border-radius: 50%; font-size: 22px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center;
+        }
+        #leaderboard-toggle:active { transform: scale(0.95); }
+        #leaderboard-toggle.visible { display: flex; }
+
+        .settings-row { margin: 25px 0; }
+        .settings-row-labels { display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; color: #555; margin-bottom: 10px; }
+        #markerScaleSlider { width: 100%; height: 12px; cursor: pointer; accent-color: var(--accent); }
+        .marker-preview-box {
+            display: flex; justify-content: center; align-items: center; padding: 25px 10px; background: #f2f2f2;
+            border-radius: 15px; margin-top: 15px; min-height: 90px;
+        }
+
+        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #tutorial-intro-overlay, #settings-overlay, #user-profile-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
+        #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
+        #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #settings-overlay, #user-profile-overlay { background: rgba(0,0,0,0.85); display: none; }
+
+        #tutorial-intro-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); z-index: 3200; display: none; }
+        .tutorial-modal {
+            background: white; color: #222; padding: 35px 25px; border-radius: 28px; width: 90%; max-width: 460px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); box-sizing: border-box; position: relative;
+        }
+        #tutorial-skip-global {
+            position: fixed; top: 16px; right: 16px; z-index: 3400; background: #fff; color: #333; border: none;
+            padding: 12px 18px; border-radius: 22px; font-size: 15px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.35); display: none;
+        }
+        #tutorial-skip-global:active { transform: scale(0.96); }
+        .tutorial-icon { font-size: 60px; line-height: 1; margin-top: 15px; margin-bottom: 10px; }
+        .tutorial-title { font-size: 26px; font-weight: 900; margin: 10px 0; color: var(--primary); line-height: 1.3; }
+        .tutorial-text { font-size: 19px; line-height: 1.6; color: #333; margin: 0 0 15px 0; font-weight: 500; }
+        .tutorial-dots { display: flex; justify-content: center; gap: 8px; margin: 15px 0 20px 0; }
+        .tutorial-dot { width: 11px; height: 11px; border-radius: 50%; background: #ddd; transition: all 0.2s; }
+        .tutorial-dot.active { background: var(--accent); width: 26px; border-radius: 8px; }
+        .tutorial-nav { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-tutorial-next {
+            flex: 2; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 16px;
+            cursor: pointer; font-weight: 900; font-size: 19px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .btn-tutorial-next:active { transform: scale(0.98); }
+        .btn-tutorial-prev {
+            flex: 1; padding: 18px; background: #eee; color: #444; border: none; border-radius: 16px;
+            cursor: pointer; font-weight: 900; font-size: 19px;
+        }
+
+        #spotlight-layer { position: fixed; inset: 0; z-index: 3250; display: none; pointer-events: none; }
+        .spotlight-dimmer { position: fixed; background: rgba(0,0,0,0.78); pointer-events: auto; transition: all 0.25s ease; }
+        .spotlight-ring {
+            position: fixed; border: 3px solid var(--accent); border-radius: 18px; pointer-events: none;
+            box-shadow: 0 0 0 6px rgba(244,67,54,0.35), 0 0 25px rgba(244,67,54,0.6);
+            transition: all 0.25s ease; z-index: 3260; animation: spotlight-pulse 1.4s ease-in-out infinite;
+        }
+        @keyframes spotlight-pulse {
+            0%, 100% { box-shadow: 0 0 0 6px rgba(244,67,54,0.35), 0 0 25px rgba(244,67,54,0.6); }
+            50% { box-shadow: 0 0 0 10px rgba(244,67,54,0.2), 0 0 35px rgba(244,67,54,0.85); }
+        }
+        .spotlight-tooltip {
+            position: fixed; z-index: 3270; background: white; color: #222; border-radius: 20px; padding: 20px;
+            width: 90%; max-width: 340px; box-shadow: 0 15px 40px rgba(0,0,0,0.45); box-sizing: border-box;
+            pointer-events: auto; visibility: hidden;
+        }
+        .spotlight-tooltip .tutorial-title { font-size: 21px; margin: 0 0 8px 0; }
+        .spotlight-tooltip .tutorial-text { font-size: 16.5px; margin: 0 0 12px 0; }
+        .spotlight-tooltip .tutorial-dots { margin: 8px 0 14px 0; }
+        
+        .modal { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 380px; color: #333; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 15px 0; }
+        .stat-val { font-size: 18px; font-weight: 900; color: var(--primary); display: block; }
+        .stat-lbl { font-size: 11px; color: #777; line-height: 1.2; font-weight: bold; }
+
+        #clue-hub-trigger {
+            background: #555; position: relative;
+        }
+        #clue-hub-trigger.glow-active {
+            background: linear-gradient(45deg, var(--purple), #8e44ad);
+            animation: pulse-trigger-limited 1.5s ease-in-out 2; 
+            box-shadow: 0 0 15px rgba(155, 89, 182, 0.6);
+        }
+        @keyframes pulse-trigger-limited {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(155, 89, 182, 0.5); }
+            50% { transform: scale(1.1); box-shadow: 0 0 25px rgba(0, 206, 201, 0.8); }
+        }
+
+        .used-hints-summary { font-size: 14px; font-weight: bold; color: var(--purple); margin: 5px 0 15px 0; background: #f5f0fa; padding: 6px; border-radius: 8px; }
+        
+        .share-container { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-share { flex: 1; padding: 12px; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.2s; }
+        .btn-share:active { transform: scale(0.98); }
+        .btn-whatsapp { background: #25D366; }
+        .btn-instagram { background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D); }
+        
+        .time-tabs { display: flex; background: #eef2f5; padding: 4px; border-radius: 14px; gap: 4px; margin-bottom: 8px; }
+        .time-tab { flex: 1; padding: 8px 4px; border: none; background: transparent; font-weight: 800; font-size: 12.5px; border-radius: 10px; cursor: pointer; color: #666; transition: all 0.2s; }
+        .time-tab.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); font-size: 13px; }
+
+        .leaderboard-rules-box {
+            font-size: 11.5px;
+            background: #f8fafc;
+            color: #475569;
+            padding: 8px 10px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            text-align: center;
+            border: 1px dashed #cbd5e1;
+            line-height: 1.35;
+        }
+
+        .leaderboard-section { text-align: right; }
+        .dopamine-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 16px; padding: 12px 16px; margin-bottom: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 2px solid #eef2f5;
+            display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden;
+        }
+        .dopamine-card.gold { border-color: var(--gold); background: linear-gradient(135deg, #fffdf0 0%, #fff8d6 100%); box-shadow: 0 6px 20px rgba(255, 215, 0, 0.25); }
+        .dopamine-card.silver { border-color: var(--silver); background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%); }
+        .dopamine-card.bronze { border-color: var(--bronze); background: linear-gradient(135deg, #fffaf5 0%, #fbebe0 100%); }
+
+        .medal-badge { font-size: 28px; line-height: 1; margin-left: 10px; display: flex; align-items: center; justify-content: center; }
+        .card-info { flex: 1; text-align: right; }
+        .card-name { font-size: 15px; font-weight: 900; color: #111; display: flex; align-items: center; gap: 6px; }
+        .card-name .me-tag { background: var(--primary); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 800; }
+        .card-location { font-size: 12px; color: #666; font-weight: 600; }
+        .card-stat { text-align: left; font-size: 16px; font-weight: 900; color: var(--primary); }
+
+        .empty-leaderboard { text-align: center; padding: 20px; color: #777; font-size: 14px; font-weight: bold; background: #f9f9f9; border-radius: 15px; border: 1px dashed #ccc; }
+        .next-game-countdown { margin-top: 12px; font-size: 13px; font-weight: bold; opacity: 0.85; letter-spacing: 0.5px; }
+
+        .clues-modal-content { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .clue-btn {
+            background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; border: none;
+            padding: 14px; border-radius: 15px; font-weight: bold; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; gap: 8px; font-size: 15px;
+            transition: all 0.3s ease;
+        }
+        .clue-btn:hover { background: linear-gradient(45deg, #8e44ad, #9b59b6); transform: scale(1.02); }
+        .clue-btn.used { background: #bbb !important; color: #666; cursor: not-allowed; opacity: 0.6; transform: none; box-shadow: none; }
+        
+        .hint-options-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
+        .hint-opt-btn {
+            padding: 12px; border: 2px solid #ddd; background: #f9f9f9; border-radius: 12px;
+            font-size: 15px; font-weight: bold; color: var(--dark); cursor: pointer; transition: all 0.2s;
+        }
+        .hint-opt-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+        #feedback { flex: 1; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px;}
+        .guess-row { padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #000; font-size: 14px; flex-shrink: 0; }
+        
+        .guess-row.special-clue {
+            border: 3px dashed #fff; box-shadow: 0 0 15px rgba(255,255,255,0.4);
+            animation: flash-special 1.5s infinite;
+        }
+        @keyframes flash-special {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @media (max-width: 850px) {
+            #sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65vh; transform: translateY(100%); border-radius: 25px 25px 0 0; transition: transform 0.1s linear; }
+            #sidebar.open { transform: translateY(0); }
+            #sidebar.transitioning { transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1); }
+            .swipe-handle { display: block; }
+            #mobile-toggle { display: block; }
+            .tutorial-title { font-size: 22px; }
+            .tutorial-text { font-size: 17px; }
+            .tutorial-icon { font-size: 48px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="setup-overlay">
+    <div style="font-size: 45px; font-weight: 900; letter-spacing: 4px;">ISRAMASTER</div>
+    <p style="margin-bottom: 30px; opacity: 0.8;">האתגר הגיאוגרפי היומי</p>
+    <div style="width: 260px; display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn-main" onclick="startGame()">שחקו עכשיו 🛰️</button>
+        <button class="btn-main btn-secondary" onclick="toggleInstructions(true)">איך משחקים?</button>
+    </div>
+</div>
+
+<div id="user-profile-overlay" style="z-index: 3500;">
+    <div class="modal" style="max-width: 360px;">
+        <h3 style="margin-top:0; color: var(--primary);">👤 רוצה להופיע בטבלת המובילים?</h3>
+        <p style="font-size:14px; color:#555; line-height:1.4;">ההרשמה משמשת אך ורק כדי להציג אותך בטבלת המובילים המשותפת. אפשר גם להישאר אנונימי/ת ולהמשיך לשחק בלי להירשם.</p>
+        <input type="text" id="popNameInput" placeholder="שם..." style="margin-bottom: 10px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
+        <input type="text" id="popLocationInput" placeholder="מאיפה אתה? (למשל: תל אביב)" style="margin-bottom: 15px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
+        <button class="btn-main" onclick="saveInitialProfile()">הרשמה לטבלת המובילים 🚀</button>
+        <button class="btn-main btn-secondary" onclick="stayAnonymous()">הישאר אנונימי 🙈</button>
+    </div>
+</div>
+
+<div id="confirm-overlay">
+    <div class="modal">
+        <h3>לוותר על האתגר?</h3>
+        <p>הפסד יירשם והמיקום ייחשף.</p>
+        <button class="btn-main" onclick="endGame(false, attempts)">כן, לוותר 🏳️</button>
+        <button class="btn-main btn-secondary" style="color:#fff; border:1px solid #777" onclick="closeConfirm()">חזרה למשחק</button>
+    </div>
+</div>
+
+<div id="clues-box-overlay">
+    <div class="modal" style="max-width: 380px;">
+        <h3 id="clue-modal-title" style="color: var(--purple); margin-top:0; font-size:22px;">🔮 מרכז הרמזים</h3>
+        <p id="clue-modal-explanation" style="font-size:13px; color:#555; line-height:1.4; margin-bottom:15px;"></p>
+        <div class="clues-modal-content" id="cluesModalContainer"></div>
+        <button class="btn-main btn-secondary" style="margin-top:15px; width:100%;" onclick="closeCluesHub()">סגירה</button>
+    </div>
+</div>
+
+<div id="warning-modal-overlay">
+    <div class="modal">
+        <h3 style="color: var(--accent); margin-top:0;">⚠️ אזהרת סיום משחק!</h3>
+        <p style="font-size:15px; color:#333; line-height:1.5; text-align:right;">פתיחת הרמז תציג בפניכם <b>5 אפשרויות בלבד</b> באזור של היעד.</p>
+        <p style="font-size:14px; color:var(--accent); font-weight:bold; line-height:1.5; text-align:right;">בחירה באחד מחמשת היישובים תהווה את הניחוש האחרון והסופי שלכם ותסיים את המשחק מיידית (ניצחון או הפסד).</p>
+        <button class="btn-main" style="background:var(--purple);" onclick="confirmAndOpenFiveOptions()">אני מבין, הצג את האפשרויות 🔮</button>
+        <button class="btn-main btn-secondary" onclick="document.getElementById('warning-modal-overlay').style.display = 'none'; openCluesHub();">חזרה למרכז הרמזים</button>
+    </div>
+</div>
+
+<div id="clue-modal-overlay">
+    <div class="modal">
+        <h3 style="color: var(--purple); margin-top:0;">🧩 בחרו את הניחוש הסופי שלכם:</h3>
+        <p style="font-size:13px; color:#666; margin-bottom:12px;">אחד מהיישובים הבאים הוא היעד האמיתי. בחירה תסיים את המשחק!</p>
+        <div class="hint-options-grid" id="hintOptionsContainer"></div>
+    </div>
+</div>
+
+<div id="how-to-play-overlay">
+    <div class="modal">
+        <h2>איך משחקים?</h2>
+        <ul style="text-align: right; line-height: 1.6; padding-right: 20px;">
+            <li>נחשו את <b>היישוב המסתורי</b>.</li>
+            <li>הצבע משתנה לפי המרחק (אדום = קרוב, צהוב = רחוק).</li>
+            <li>החץ מראה את <b>הכיוון</b> ליישוב.</li>
+            <li>יש לכם 10 ניסיונות.</li>
+            <hr style="opacity:0.2; margin: 10px 0;">
+            <li><b>🔮 מערכת רמזים מיוחדת:</b></li>
+            <li>התקרבו אל <b>מתחת ל-10 ק"מ</b> מהיעד כדי לפתוח את מרכז הרמזים!</li>
+            <li>תוכלו לחשוף את השכן הקרוב ביותר ללא עלות ניסיונות, או לפתוח את <b>אתגר 1 מתוך 5</b> שיסיים את המשחק לפי בחירתכם!</li>
+        </ul>
+        <button class="btn-main" onclick="toggleInstructions(false)">הבנתי!</button>
+    </div>
+</div>
+
+<button id="tutorial-skip-global" onclick="skipTutorial()">דלג על סיור ⏭️</button>
+
+<div id="tutorial-intro-overlay">
+    <div class="tutorial-modal">
+        <div class="tutorial-icon" id="tutorial-icon"></div>
+        <div class="tutorial-title" id="tutorial-title"></div>
+        <div class="tutorial-text" id="tutorial-text"></div>
+        <div class="tutorial-dots" id="tutorial-dots"></div>
+        <div class="tutorial-nav">
+            <button class="btn-tutorial-prev" id="tutorial-prev" onclick="tutorialPrev()">חזרה ➡️</button>
+            <button class="btn-tutorial-next" id="tutorial-next" onclick="tutorialNext()">הבא ⬅️</button>
+        </div>
+    </div>
+</div>
+
+<div id="spotlight-layer">
+    <div class="spotlight-dimmer" id="sp-dim-top"></div>
+    <div class="spotlight-dimmer" id="sp-dim-bottom"></div>
+    <div class="spotlight-dimmer" id="sp-dim-left"></div>
+    <div class="spotlight-dimmer" id="sp-dim-right"></div>
+    <div class="spotlight-ring" id="sp-ring"></div>
+    <div class="spotlight-tooltip" id="sp-tooltip">
+        <div class="tutorial-title" id="tutorial-title-s"></div>
+        <div class="tutorial-text" id="tutorial-text-s"></div>
+        <div class="tutorial-dots" id="tutorial-dots-s"></div>
+        <div class="tutorial-nav">
+            <button class="btn-tutorial-prev" id="tutorial-prev-s" onclick="tutorialPrev()">חזרה ➡️</button>
+            <button class="btn-tutorial-next" id="tutorial-next-s" onclick="tutorialNext()">הבא ⬅️</button>
+        </div>
+    </div>
+</div>
+
+<div id="settings-overlay">
+    <div class="modal">
+        <h2 style="margin-top:0;">⚙️ הגדרות</h2>
+        
+        <div style="text-align: right; margin-bottom: 15px;">
+            <label style="font-weight: bold; font-size: 14px; color: #333;">שם שחקן:</label>
+            <input type="text" id="settingsNameInput" placeholder="השם שלך" style="margin-top: 4px; margin-bottom: 10px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
+            <label style="font-weight: bold; font-size: 14px; color: #333;">מאיפה אתה?:</label>
+            <input type="text" id="settingsLocationInput" placeholder="למשל: תל אביב" style="margin-top: 4px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
+            <div id="profileChangeNote" style="font-size: 12px; color: #888; margin-top: 6px;"></div>
+        </div>
+
+        <hr style="opacity: 0.2; margin: 15px 0;">
+
+        <p style="font-size:15px; color:#555; text-align:right; line-height:1.5;">גודל שמות היישובים והחצים במפה:</p>
+        <div class="settings-row" style="margin: 15px 0;">
+            <div class="settings-row-labels">
+                <span>קטן</span>
+                <span>גדול 🔎</span>
+            </div>
+            <input type="range" id="markerScaleSlider" min="0.5" max="2.5" step="0.1" value="1" style="width:100%; box-sizing:border-box;" oninput="updateMarkerScale(this.value)">
+        </div>
+        <div class="marker-preview-box">
+            <div class="custom-marker">
+                <div class="marker-bubble" style="border-color:#f44336;">
+                    <div>אבן ספיר</div>
+                    <div class="marker-distance">12.3 ק"מ <span class="marker-arrow" style="transform:rotate(45deg); display:inline-block;">⬆️</span></div>
+                </div>
+                <div class="marker-dot" style="background-color:#f44336;"></div>
+            </div>
+        </div>
+        <button class="btn-main" style="margin-top:20px;" onclick="closeSettings()">שמירה וסגירה ✅</button>
+    </div>
+</div>
+
+<button id="mobile-toggle" onclick="toggleSidebar(true)">ניחוש 📊</button>
+<button id="settings-toggle" onclick="openSettings()" title="הגדרות תצוגה">⚙️</button>
+<button id="leaderboard-toggle" onclick="showVictoryOverlay()" title="טבלת המובילים">🏆</button>
+
+<div id="sidebar">
+    <div class="swipe-handle" id="swipeHandle"></div>
+    <div class="stats-card">
+        <h3 style="margin:0; letter-spacing: 2px;">ISRAMASTER</h3>
+        <div class="life-container" id="lifePoints"></div>
+    </div>
+    
+    <div class="error-container">
+        <div id="errorMsg"></div>
+    </div>
+    
+    <input type="text" id="cityInput" placeholder="שם היישוב..." list="cityList" autocomplete="off" onkeypress="if(event.key === 'Enter') makeGuess()" oninput="clearErrorOnType()">
+    <datalist id="cityList"></datalist>
+    
+    <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button id="submitBtn" class="btn-main" style="margin-top:0; flex: 3;" onclick="makeGuess()">ניחוש 🚀</button>
+        <button id="clue-hub-trigger" class="btn-main" style="margin-top:0; flex: 1.2;" onclick="openCluesHub()">🔮</button>
+        <button id="giveUpBtn" class="btn-main btn-secondary" style="margin-top:0; flex: 1;" onclick="showConfirm()">🏳️</button>
+    </div>
+
+    <div id="feedback"></div>
+</div>
+
+<div id="map"></div>
+
+<div id="victory-overlay" style="display:none;">
+    <div class="modal" style="max-width: 440px; width: 90%;">
+        <h2 id="vic-title"></h2>
+        <p id="vic-msg"></p>
+        
+        <div id="hints-count-summary" class="used-hints-summary"></div>
+
+        <div class="stats-grid">
+            <div class="stat-item"><span class="stat-val" id="st-played">0</span><span class="stat-lbl">משחקים</span></div>
+            <div class="stat-item"><span class="stat-val" id="st-winpct">0%</span><span class="stat-lbl">ניצחונות</span></div>
+            <div class="stat-item"><span class="stat-val" id="st-streak">0</span><span class="stat-lbl">רצף</span></div>
+            <div class="stat-item"><span class="stat-val" id="st-avg">0</span><span class="stat-lbl">ממוצע ניסיונות</span></div>
+        </div>
+
+        <div class="leaderboard-section">
+            <div class="time-tabs">
+                <button class="time-tab active" onclick="switchLeaderboardTime('today', this)">📅 היום</button>
+                <button class="time-tab" onclick="switchLeaderboardTime('week', this)">🗓️ השבוע</button>
+                <button class="time-tab" onclick="switchLeaderboardTime('alltime', this)">🏆 כל הזמנים</button>
+            </div>
+            
+            <div id="realLeaderboardContainer"></div>
+
+            <div class="leaderboard-rules-box">
+                💡 <b>חוקי הדירוג:</b> בלשוניות השבוע וכל הזמנים מוצג ממוצע הניסיונות של השחקן. ויתור נחשב כ-10 ניסיונות.
+            </div>
+        </div>
+
+        <div class="share-container">
+            <button class="btn-share btn-whatsapp" onclick="shareGame('whatsapp')"><i class="fa-brands fa-whatsapp"></i> WhatsApp 💬</button>
+            <button class="btn-share btn-instagram" onclick="shareGame('instagram')">Instagram 📸</button>
+        </div>
+
+        <button class="btn-main" style="background: var(--dark); margin-top: 15px;" onclick="hideOverlay()">סגירת מפה 🗺️</button>
+        <div id="next-game-countdown" class="next-game-countdown">⏳ טוען...</div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// --- FIREBASE INITIALIZATION ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDUWY4CAQZCxhbc5mkVMZp4QSwgVQL9lB0",
+  authDomain: "isramaster-75a90.firebaseapp.com",
+  databaseURL: "https://isramaster-75a90-default-rtdb.firebaseio.com",
+  projectId: "isramaster-75a90",
+  storageBucket: "isramaster-75a90.firebasestorage.app",
+  messagingSenderId: "669845000477",
+  appId: "1:669845000477:web:280289f5dcc42d85cd91f4",
+  measurementId: "G-W0W4TZKQXK"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
+
+// --- SERVER-SYNCED TIME (prevents cheating by changing the device clock) ---
+// Firebase exposes the difference between the device clock and Google's servers.
+// We use that offset (instead of the raw device Date) for everything date-related,
+// so a player who fiddles with their phone's clock/timezone can't unlock tomorrow's
+// puzzle early or replay a past one.
+let serverTimeOffset = 0;
+
+function getServerNow() {
+    return Date.now() + serverTimeOffset;
+}
+
+function initServerTime() {
+    return new Promise((resolve) => {
+        let resolved = false;
+        const finish = () => { if (!resolved) { resolved = true; resolve(); } };
+        db.ref('.info/serverTimeOffset').on('value', (snap) => {
+            serverTimeOffset = snap.val() || 0;
+            finish();
+        }, () => finish());
+        // Don't block the app forever if we're offline on first load.
+        setTimeout(finish, 2500);
+    });
+}
+
+// --- ONE-TIME LEADERBOARD RESET ---
+// Wipes every past score so the leaderboard (today / week / all-time) starts fresh.
+// Guarded by a Firebase transaction so that out of all players loading the app,
+// only the very first one actually performs the deletion.
+async function resetLeaderboardIfNeeded() {
+    try {
+        const metaRef = db.ref('meta/leaderboardResetV1');
+        const result = await metaRef.transaction((current) => {
+            if (current === null) return { claimedAt: Date.now() };
+            return; // already claimed by someone else - abort, do nothing
+        });
+        if (result && result.committed) {
+            await db.ref('scores').remove();
+        }
+    } catch (err) {
+        console.error('Leaderboard reset check failed:', err);
+    }
+}
+
+let allCities = [];
+let target;
+let attempts = 10;
+let isGameOver = false;
+let errorTimeout;
+let currentGuessesList = [];
+let currentLeaderboardFilter = 'today';
+let pendingScore = null;
+
+let unlockedClues = { 
+    eligible: false, 
+    closestNeighborUsed: false,
+    fiveOptionsUsed: false
+};
+
+const settlementPool = [
+    "דגניה א", "משמר העמק", "עין גדי", "יטבתה", "שדה בוקר", "יחיעם", "עין שמר", "גן שמר", "מרחביה", "נחשולים", 
+    "צרעה", "עין חרוד", "רמת רחל", "גליל ים", "כפר ויתקין", "בית יצחק", "משמר השרון", "כפר מל\"ל", "עין ורד", "בצרה", 
+    "רשפון", "שפיים", "גאולים", "שער העמקים", "אלונים", "עין השופט", "דליה", "חניתה", "אילון", "מצובה", 
+    "כפר גלעדי", "תל חי", "איילת השחר", "חולתה", "עמיר", "כפר בלום", "דן", "דפנה", "שדה נחמיה", "הגושרים", 
+    "מעיין ברוך", "יפתח", "מלכיה", "מנרה", "משגב עם", "ראש הנקרה", "סער", "עברון", "כברי", "לוחמי הגטאות", 
+    "שבי ציון", "בוסתן הגליל", "אפק", "עין המפרץ", "כפר מסריק", "שמרת", "יסעור", "אחיהוד", "מסילות", "ניר דוד", 
+    "טירת צבי", "שדה אליהו", "עין הנציב", "חפציבה", "בית אלפא", "גבע", "עין חרוד מאוחד", "עין חרוד איחוד", "תל יוסף", "מולדת", 
+    "רמת צבי", "כפר יחזקאל", "גדעונה", "נורית", "מגן", "בארי", "כפר עזה", "נחל עוז", "נירים", "ניר עוז", 
+    "כיסופים", "עין השלושה", "רעים", "חולית", "כרם שלום", "סופה", "סח'נין", "אום אל-פחם", "טייבה", "טירה", 
+    "באקה אל-גרבייה", "כפר קאסם", "ערערה", "ג'סר א-זרקא", "פוריידיס", "ג'לג'וליה"
+];
+
+const cityAliases = {
+    "תל אביב": "תל אביב-יפו",
+    "פרדס חנה": "פרדס חנה-כרכור",
+    "מודיעין": "מודיעין-מכבים-רעות"
+};
+
+function resolveCityName(val) {
+    if (allCities.some(c => c.name === val)) return val;
+    if (cityAliases[val]) return cityAliases[val];
+    return val;
+}
+
+const excludeKeywords = ["כפר", "אבו", "עין", "דיר", "משהד", "מג'ד", "חורפיש", "בועיינה", "יאנוח", "ג'ת", "ירכא", "ראמה", "ג'ש", "ביר", "חמאם", "אחסם", "שעב", "דבוריה", "טורעאן", "כאבול", "זמר", "פוריידיס", "ג'סר", "ריינה", "עילוט", "מזרעה", "כסרא", "סמיע", "סאג'ור", "כסלון", "מוקייבלה", "שיבלי", "אום"];
+
+const extraExclusions = [
+    "פוריידיס", "איכסאל", "נחף", "כאוכב", "ג'לג'וליה", "כפר קאסם", "טירה", "טייבה", 
+    "קלנסווה", "ערערה", "חורפיש", "מזרעה", "בוקעאתא", "מג'דל שמס", "מסעדה", "עין קנייה", 
+    "לקיה", "תל שבע", "חורה", "כסייפה", "ערערה בנגב", "שגב שלום", "אום אל-פחם", 
+    "באקה אל-גרבייה", "נצרת", "סח'נין", "רהט", "שפרעם", "עיילבון", "טובא זנגריה"
+];
+
+const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31.5, 34.8], 8);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+
+let touchStartY = 0;
+let currentTranslateY = 0;
+const sidebar = document.getElementById('sidebar');
+
+sidebar.addEventListener('touchstart', e => {
+    if (sidebar.scrollTop <= 0) {
+        touchStartY = e.touches[0].clientY;
+        sidebar.classList.remove('transitioning');
+    }
+}, {passive: true});
+
+sidebar.addEventListener('touchmove', e => {
+    if (sidebar.scrollTop <= 0) {
+        let touchY = e.touches[0].clientY;
+        const diff = touchY - touchStartY;
+        if (diff > 0 && sidebar.classList.contains('open')) {
+            sidebar.style.transform = `translateY(${diff}px)`;
+            currentTranslateY = diff;
+        }
+    }
+}, {passive: true});
+
+sidebar.addEventListener('touchend', () => {
+    sidebar.classList.add('transitioning');
+    if (currentTranslateY > 150) {
+        toggleSidebar(false);
+    } else {
+        sidebar.style.transform = '';
+    }
+    currentTranslateY = 0;
+});
+
+map.on('click', () => { if(window.innerWidth <= 850) toggleSidebar(false); });
+
+const PROFILE_CHANGE_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000; // ~3 months
+
+function generateUserId() {
+    return 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+
+function getUserProfile() {
+    let profile = JSON.parse(localStorage.getItem('israeleUserProfile'));
+    if (!profile) {
+        profile = { userId: '', name: '', location: '', anonymous: false, lastChangeAt: null };
+    }
+    if (!profile.userId) {
+        profile.userId = generateUserId();
+        localStorage.setItem('israeleUserProfile', JSON.stringify(profile));
+    }
+    return profile;
+}
+
+// Used for the very first time someone signs up - no cooldown applies here.
+function saveUserProfile(name, location) {
+    const profile = getUserProfile();
+    profile.name = name.trim();
+    profile.location = location.trim();
+    profile.anonymous = false;
+    profile.lastChangeAt = Date.now();
+    localStorage.setItem('israeleUserProfile', JSON.stringify(profile));
+}
+
+function markUserAnonymous() {
+    const profile = getUserProfile();
+    profile.anonymous = true;
+    localStorage.setItem('israeleUserProfile', JSON.stringify(profile));
+}
+
+// Can the player edit their name/location right now, or are they still in the 3-month cooldown?
+function getProfileChangeStatus() {
+    const profile = getUserProfile();
+    if (!profile.name || !profile.lastChangeAt) return { canChange: true, daysLeft: 0 };
+    const elapsed = Date.now() - profile.lastChangeAt;
+    if (elapsed >= PROFILE_CHANGE_COOLDOWN_MS) return { canChange: true, daysLeft: 0 };
+    const daysLeft = Math.ceil((PROFILE_CHANGE_COOLDOWN_MS - elapsed) / (24 * 60 * 60 * 1000));
+    return { canChange: false, daysLeft };
+}
+
+// Pushes a renamed/relocated profile to every one of that player's past leaderboard
+// entries in Firebase, so the new name/location shows up on every device, not just this one.
+async function propagateProfileUpdate(userId, name, location) {
+    try {
+        const snapshot = await db.ref('scores').orderByChild('userId').equalTo(userId).once('value');
+        const updates = {};
+        snapshot.forEach((child) => {
+            updates[`scores/${child.key}/name`] = name;
+            updates[`scores/${child.key}/location`] = location;
+        });
+        updates[`users/${userId}`] = { name, location, updatedAt: Date.now() };
+        await db.ref().update(updates);
+    } catch (err) {
+        console.error('Failed to sync profile update:', err);
+    }
+}
+
+// Applies a name/location change from the settings screen, enforcing the 3-month cooldown.
+function changeUserProfile(name, location) {
+    const status = getProfileChangeStatus();
+    if (!status.canChange) {
+        alert(`אפשר לשנות שם או מקום מגורים רק פעם ב-3 חודשים. אפשר לשנות שוב בעוד ${status.daysLeft} ימים.`);
+        return false;
+    }
+    const profile = getUserProfile();
+    saveUserProfile(name, location);
+    propagateProfileUpdate(profile.userId, name.trim(), location.trim());
+    return true;
+}
+
+function getGameDayIndex() {
+    const { year, month, day } = getIsraelDateParts(0);
+    const todayUTC = Date.UTC(year, month - 1, day);
+    const startUTC = Date.UTC(2026, 5, 24);
+    return Math.floor(Math.abs(todayUTC - startUTC) / (1000 * 60 * 60 * 24));
+}
+
+// Reads the current (server-corrected) date as it appears on an Israeli clock,
+// regardless of the player's own device timezone or clock setting.
+function getIsraelDateParts(offsetDays = 0) {
+    const t = getServerNow() - offsetDays * 24 * 60 * 60 * 1000;
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const map = {};
+    fmt.formatToParts(new Date(t)).forEach(p => { map[p.type] = p.value; });
+    return { year: parseInt(map.year, 10), month: parseInt(map.month, 10), day: parseInt(map.day, 10) };
+}
+
+function getDailyKey(offsetDays = 0) {
+    const { year, month, day } = getIsraelDateParts(offsetDays);
+    return `v7-${year}-${month}-${day}`;
+}
+
+// Milliseconds remaining until the next puzzle unlocks (00:00 Israel time).
+function getMsUntilNextIsraelMidnight() {
+    const now = getServerNow();
+    const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const map = {};
+    fmt.formatToParts(new Date(now)).forEach(p => { map[p.type] = p.value; });
+    const secondsPassedToday = (parseInt(map.hour, 10) * 3600) + (parseInt(map.minute, 10) * 60) + parseInt(map.second, 10);
+    return ((24 * 60 * 60) - secondsPassedToday) * 1000;
+}
+
+function seededShuffle(arr, seedString) {
+    let hash = 0;
+    for (let i = 0; i < seedString.length; i++) {
+        hash = ((hash << 5) - hash) + seedString.charCodeAt(i);
+    }
+    let random = () => {
+        let x = Math.sin(hash++) * 10000;
+        return x - Math.floor(x);
+    };
+    let shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+async function loadData() {
+    try {
+        const response = await fetch('MapIsrael.geojson');
+        const data = await response.json();
+        
+        allCities = data.features.map(f => ({
+            name: (f.properties["name:he"] || f.properties["name"] || "").trim(),
+            lat: f.geometry.coordinates[1],
+            lon: f.geometry.coordinates[0]
+        })).filter(c => c.name !== "");
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTarget = urlParams.get('target');
+
+        if (urlTarget) {
+            target = allCities.find(c => c.name === urlTarget.trim());
+        }
+
+        if (!target) {
+            try {
+                const configResp = await fetch('config.json');
+                const configData = await configResp.json();
+                if (configData && configData.manualTarget && configData.manualTarget.trim() !== "") {
+                    target = allCities.find(c => c.name === configData.manualTarget.trim());
+                }
+            } catch (e) {}
+        }
+
+        if (!target) {
+            const dayIndex = getGameDayIndex();
+            const changeoverIndex = 45;
+
+            if (dayIndex >= changeoverIndex) {
+                const availablePool = settlementPool.filter(sName => allCities.some(c => c.name === sName));
+                const poolIndex = dayIndex - changeoverIndex;
+
+                const seedStr = getDailyKey();
+                let hash = 0;
+                for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+                const seededRandom = Math.abs(Math.sin(hash));
+
+                if (poolIndex < availablePool.length) {
+                    const chosenName = availablePool[poolIndex];
+                    target = allCities.find(c => c.name === chosenName);
+                } else {
+                    const citiesOutsidePool = allCities.filter(c => !settlementPool.includes(c.name));
+                    if (citiesOutsidePool.length > 0) {
+                        target = citiesOutsidePool[Math.floor(seededRandom * citiesOutsidePool.length)];
+                    } else {
+                        target = allCities[Math.floor(seededRandom * allCities.length)];
+                    }
+                }
+            } else {
+                const baseSequence = ["כרי דשא", "קרית גת", "אילת", "גן נר", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "הר עמשא", "אשקלון"];
+                const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
+
+                const validTargets = allCities.filter(city => {
+                    const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
+                    const isExcludedByName = extraExclusions.includes(city.name);
+                    return !(isExcludedByKeyword || isExcludedByName);
+                });
+
+                if (dayIndex < customSequence.length) {
+                    const nextCityName = customSequence[dayIndex];
+                    target = allCities.find(c => c.name === nextCityName);
+                    if (!target) {
+                        target = validTargets[dayIndex % validTargets.length];
+                    }
+                } else {
+                    const remainingTargets = validTargets.filter(city => !customSequence.includes(city.name));
+                    const seedStr = getDailyKey();
+                    let hash = 0;
+                    for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+                    const seededRandom = Math.abs(Math.sin(hash));
+                    
+                    target = remainingTargets[Math.floor(seededRandom * remainingTargets.length)];
+                }
+            }
+        }
+
+        const container = document.getElementById('lifePoints');
+        container.innerHTML = '';
+        for(let i=0; i<10; i++) {
+            const div = document.createElement('div');
+            div.className = 'life-circle';
+            div.id = `life-${9-i}`;
+            container.appendChild(div);
+        }
+        
+        const dl = document.getElementById('cityList');
+        dl.innerHTML = '';
+        [...new Set(allCities.map(c => c.name))].sort().forEach(name => {
+            let o = document.createElement('option'); o.value = name; dl.appendChild(o);
+        });
+
+        restoreGameState();
+    } catch (e) { console.error("Error loading data", e); }
+}
+
+function restoreGameState() {
+    const stats = JSON.parse(localStorage.getItem('israeleStats')) || { history: {} };
+    const today = getDailyKey();
+    if (stats.history && stats.history[today]) {
+        const todayData = stats.history[today];
+        document.getElementById('setup-overlay').style.display = 'none';
+        
+        if (todayData.unlockedClues) {
+            unlockedClues = todayData.unlockedClues;
+        }
+        
+        todayData.guessesToday.forEach(cityName => {
+            let isClue = false;
+            if (todayData.clueGuessesToday && todayData.clueGuessesToday.includes(cityName)) {
+                isClue = true;
+            }
+            processGuess(cityName, true, isClue);
+        });
+        if (todayData.isGameOverToday) endGame(todayData.lastResultWasWin, todayData.lastAttemptsCount, true);
+    }
+}
+
+function getLevenshteinDistance(a, b) {
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) matrix[i][j] = matrix[i - 1][j - 1];
+            else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+        }
+    }
+    return matrix[b.length][a.length];
+}
+
+function clearErrorOnType() {
+    const errorDiv = document.getElementById('errorMsg');
+    if (errorDiv.classList.contains('visible')) {
+        errorDiv.classList.remove('visible');
+    }
+}
+
+function makeGuess() {
+    const input = document.getElementById('cityInput');
+    const rawVal = input.value.trim();
+    const errorDiv = document.getElementById('errorMsg');
+    if (!rawVal || isGameOver) return;
+
+    const val = resolveCityName(rawVal);
+    const guess = allCities.find(c => c.name === val);
+    
+    if (!guess) {
+        clearTimeout(errorTimeout);
+        input.classList.add('shake');
+        setTimeout(() => input.classList.remove('shake'), 400);
+
+        let bestMatch = null;
+        for (let city of allCities) {
+            if (getLevenshteinDistance(val, city.name) <= 2) { bestMatch = city.name; break; }
+        }
+
+        errorDiv.classList.add('visible');
+        errorDiv.classList.remove('suggestion-active');
+
+        if (bestMatch) {
+            errorDiv.classList.add('suggestion-active');
+            errorDiv.innerHTML = `האם התכוונת ל:<br><span class="suggestion-link" onclick="applySuggestion('${bestMatch}')">${bestMatch}?</span>`;
+        } else {
+            errorDiv.innerHTML = `היישוב לא מופיע במאגר ❌`;
+            errorTimeout = setTimeout(() => { errorDiv.classList.remove('visible'); }, 4000);
+        }
+        return;
+    }
+    
+    errorDiv.classList.remove('visible');
+    processGuess(val);
+    input.value = "";
+}
+
+function applySuggestion(name) {
+    document.getElementById('cityInput').value = name;
+    document.getElementById('errorMsg').classList.remove('visible');
+    makeGuess();
+}
+
+function getClosestNeighbor(targetCity) {
+    let closest = null;
+    let minDistance = Infinity;
+    
+    allCities.forEach(c => {
+        if (c.name !== targetCity.name && !currentGuessesList.includes(c.name)) {
+            let d = calculateDistance(targetCity.lat, targetCity.lon, c.lat, c.lon);
+            if (d < minDistance) {
+                minDistance = d;
+                closest = c;
+            }
+        }
+    });
+    return closest ? closest.name : "לא נמצא";
+}
+
+function generateFiveRegionalOptions() {
+    let listWithDistances = allCities
+        .filter(c => c.name !== target.name && !currentGuessesList.includes(c.name))
+        .map(c => ({
+            name: c.name,
+            dist: calculateDistance(target.lat, target.lon, c.lat, c.lon)
+        }));
+    
+    listWithDistances.sort((a,b) => a.dist - b.dist);
+    
+    let options = listWithDistances.slice(0, 4).map(o => o.name);
+    options.push(target.name);
+    
+    return options.sort(() => Math.random() - 0.5);
+}
+
+function updateCluesHubTriggerUI() {
+    const trigger = document.getElementById('clue-hub-trigger');
+    if (unlockedClues.eligible) {
+        const bothUsed = unlockedClues.closestNeighborUsed && unlockedClues.fiveOptionsUsed;
+        if (!bothUsed) {
+            trigger.classList.add('glow-active');
+            return;
+        }
+    }
+    trigger.classList.remove('glow-active');
+}
+
+function openCluesHub() {
+    const overlay = document.getElementById('clues-box-overlay');
+    const container = document.getElementById('cluesModalContainer');
+    const explanation = document.getElementById('clue-modal-explanation');
+    container.innerHTML = '';
+
+    if (!unlockedClues.eligible) {
+        explanation.innerHTML = `🔒 <b>מרכז הרמזים נעול!</b><br>הרמזים ייפתחו אוטומטית ברגע שתצליחו לנחש יישוב שנמצא <b>במרחק של 10 ק"מ או פחות</b> מהיעד.`;
+    } else {
+        explanation.innerHTML = `🎉 <b>כל הכבוד! הגעתם אל מתחת ל-10 ק"מ!</b><br>בזכות הקרבה המטורפת שלכם ליעד, הרמזים הבאים פתוחים בפניכם:`;
+        
+        if (!unlockedClues.closestNeighborUsed) {
+            container.innerHTML += `<button class="clue-btn" onclick="useClosestNeighborClue()">🏡 השכן הקרוב ביותר</button>`;
+        } else {
+            container.innerHTML += `<button class="clue-btn used" disabled>🏡 רמז השכן הקרוב כבר נוצל ✅</button>`;
+        }
+
+        if (!unlockedClues.fiveOptionsUsed) {
+            container.innerHTML += `<button class="clue-btn" style="background: linear-gradient(45deg, #e74c3c, #c0392b);" onclick="triggerFiveOptionsWarning()">🧩 1 מתוך 5 אפשרויות</button>`;
+        } else {
+            container.innerHTML += `<button class="clue-btn used" disabled>🧩 רמז 5 האפשרויות כבר נוצל ✅</button>`;
+        }
+    }
+
+    overlay.style.display = 'flex';
+}
+
+function closeCluesHub() {
+    document.getElementById('clues-box-overlay').style.display = 'none';
+}
+
+function useClosestNeighborClue() {
+    if(unlockedClues.closestNeighborUsed) return;
+    unlockedClues.closestNeighborUsed = true;
+    closeCluesHub();
+    updateCluesHubTriggerUI();
+    
+    const neighborName = getClosestNeighbor(target);
+    processGuess(neighborName, false, true); 
+}
+
+function triggerFiveOptionsWarning() {
+    closeCluesHub();
+    document.getElementById('warning-modal-overlay').style.display = 'flex';
+}
+
+function confirmAndOpenFiveOptions() {
+    if(unlockedClues.fiveOptionsUsed) return;
+    document.getElementById('warning-modal-overlay').style.display = 'none';
+    
+    const container = document.getElementById('hintOptionsContainer');
+    container.innerHTML = '';
+    
+    const options = generateFiveRegionalOptions();
+    options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'hint-opt-btn';
+        btn.innerText = opt;
+        btn.onclick = () => {
+            unlockedClues.fiveOptionsUsed = true;
+            document.getElementById('clue-modal-overlay').style.display = 'none';
+            updateCluesHubTriggerUI();
+            
+            saveProgress(opt, false);
+            
+            if (opt === target.name) {
+                endGame(true, attempts, false);
+            } else {
+                endGame(false, 0, false);
+            }
+        };
+        container.appendChild(btn);
+    });
+    
+    document.getElementById('clue-modal-overlay').style.display = 'flex';
+}
+
+function processGuess(cityName, isRestoring = false, isClueGuess = false) {
+    let guess = allCities.find(c => c.name === cityName);
+    if (!guess) return;
+
+    if (!currentGuessesList.includes(cityName)) {
+        currentGuessesList.push(cityName);
+    }
+
+    if (!isClueGuess) {
+        attempts--;
+        const lifeCircle = document.getElementById(`life-${attempts}`);
+        if(lifeCircle) lifeCircle.classList.add('lost');
+    }
+
+    const dist = calculateDistance(guess.lat, guess.lon, target.lat, target.lon);
+    const bearing = (Math.atan2(target.lon - guess.lon, target.lat - guess.lat) * 180 / Math.PI + 360) % 360;
+    const ratio = Math.pow(Math.min(dist / 150, 1), 0.35);
+    const color = `rgb(255, ${Math.floor(255 * ratio)}, ${Math.floor(100 * ratio)})`;
+
+    if (dist <= 10) {
+        unlockedClues.eligible = true;
+    }
+    updateCluesHubTriggerUI();
+
+    let markerHtml = ``;
+    if(isClueGuess) {
+        markerHtml = `<div class="marker-bubble" style="border-color:var(--purple); background:#f8efff; color:var(--purple);"><div>✨ רמז: ${guess.name}</div><div class="marker-distance">${dist.toFixed(1)} ק"מ <span class="marker-arrow" style="transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:var(--purple)"></div>`;
+    } else {
+        markerHtml = `<div class="marker-bubble" style="border-color:${color}"><div>${guess.name}</div><div class="marker-distance">${dist.toFixed(1)} ק"מ <span class="marker-arrow" style="transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:${color}"></div>`;
+    }
+
+    const icon = L.divIcon({
+        className: 'custom-marker',
+        html: markerHtml,
+        iconSize: [0, 0], iconAnchor: [0, 48]
+    });
+    L.marker([guess.lat, guess.lon], { icon: icon }).addTo(map);
+    
+    const row = document.createElement('div');
+    if (isClueGuess) {
+        row.className = 'guess-row special-clue';
+        row.style.background = 'linear-gradient(45deg, #9b59b6, #2c3e50)';
+        row.style.color = '#fff';
+        row.innerHTML = `<span>🔮 רמז: ${guess.name}</span> <span>${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></span>`;
+    } else {
+        row.className = 'guess-row';
+        row.style.background = color;
+        row.innerHTML = `<span>${guess.name}</span> <span>${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></span>`;
+    }
+    document.getElementById('feedback').prepend(row);
+
+    if (!isRestoring) {
+        saveProgress(cityName, isClueGuess);
+        const sidebarPadding = window.innerWidth > 850 ? [400, 0] : [0, 0];
+        map.flyTo([guess.lat, guess.lon], 11, {
+            paddingTopLeft: sidebarPadding,
+            duration: 1.5
+        });
+    }
+
+    if (cityName === target.name) endGame(true, attempts, isRestoring);
+    else if (attempts === 0) endGame(false, attempts, isRestoring);
+}
+
+function saveProgress(cityName, isClueGuess) {
+    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {}, gaveUpCount: 0 };
+    const today = getDailyKey();
+    if (!stats.history) stats.history = {};
+    if (!stats.history[today]) stats.history[today] = { guessesToday: [], clueGuessesToday: [], isGameOverToday: false };
+    if (!stats.history[today].clueGuessesToday) stats.history[today].clueGuessesToday = [];
+    
+    stats.history[today].guessesToday.push(cityName);
+    if(isClueGuess) {
+        stats.history[today].clueGuessesToday.push(cityName);
+    }
+    stats.history[today].unlockedClues = unlockedClues;
+    
+    localStorage.setItem('israeleStats', JSON.stringify(stats));
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2-lat1)*Math.PI/180;
+    const dLon = (lon2-lon1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function saveInitialProfile() {
+    const name = document.getElementById('popNameInput').value.trim();
+    const loc = document.getElementById('popLocationInput').value.trim();
+    if (!name || !loc) {
+        alert("אנא מלא את שני השדות כדי להמשיך.");
+        return;
+    }
+    saveUserProfile(name, loc);
+    document.getElementById('user-profile-overlay').style.display = 'none';
+
+    if (pendingScore) {
+        sendScoreToBackend(pendingScore.win, pendingScore.guesses);
+        pendingScore = null;
+    }
+
+    renderRealLeaderboard();
+}
+
+// Player chose "stay anonymous" - remember that choice so we never nag them again,
+// and never send their result to the shared leaderboard.
+function stayAnonymous() {
+    markUserAnonymous();
+    document.getElementById('user-profile-overlay').style.display = 'none';
+    pendingScore = null;
+}
+
+function switchLeaderboardTime(timeframe, btn) {
+    document.querySelectorAll('.time-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    currentLeaderboardFilter = timeframe;
+    renderRealLeaderboard();
+}
+
+async function sendScoreToBackend(win, guesses) {
+    const user = getUserProfile();
+    if (!user.name || user.anonymous) return;
+
+    try {
+        const scoreRef = db.ref('scores').push();
+        await scoreRef.set({
+            userId: user.userId,
+            name: user.name,
+            location: user.location,
+            dateKey: getDailyKey(),
+            timestamp: Date.now(),
+            guesses: guesses,
+            won: win
+        });
+    } catch (err) {
+        console.error('Failed to submit score:', err);
+    }
+}
+
+async function renderRealLeaderboard() {
+    const container = document.getElementById('realLeaderboardContainer');
+    container.innerHTML = 'טוען נתונים...';
+
+    try {
+        const snapshot = await db.ref('scores').once('value');
+        const data = snapshot.val();
+
+        if (!data) {
+            container.innerHTML = `<div class="empty-leaderboard">🎯 אין עדיין נתונים לתקופה זו.</div>`;
+            return;
+        }
+
+        let records = Object.values(data);
+        const now = Date.now();
+        const todayKey = getDailyKey();
+
+        if (currentLeaderboardFilter === 'today') {
+            records = records.filter(r => r.dateKey === todayKey);
+
+            records.sort((a, b) => {
+                if (a.won !== b.won) return b.won ? 1 : -1;
+                return a.guesses - b.guesses;
+            });
+
+            if (records.length === 0) {
+                container.innerHTML = `<div class="empty-leaderboard">🎯 אין עדיין נתונים לתקופה זו.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            const currentUser = getUserProfile();
+
+            records.slice(0, 50).forEach((rec, index) => {
+                const isMe = rec.name === currentUser.name && rec.location === currentUser.location;
+                const badge = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤';
+
+                container.innerHTML += `
+                    <div class="dopamine-card ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}">
+                        <div class="medal-badge">${badge}</div>
+                        <div class="card-info">
+                            <div class="card-name">${rec.name} ${isMe ? '<span class="me-tag">אתה</span>' : ''}</div>
+                            <div class="card-location">📍 ${rec.location}</div>
+                        </div>
+                        <div>
+                            <div class="card-stat">${rec.won ? rec.guesses + ' ניחושים' : '🏳️ ויתר/ה'}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            // 'week' or 'alltime'
+            if (currentLeaderboardFilter === 'week') {
+                const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+                records = records.filter(r => now - r.timestamp <= sevenDaysMs);
+            }
+
+            if (records.length === 0) {
+                container.innerHTML = `<div class="empty-leaderboard">🎯 אין עדיין נתונים לתקופה זו.</div>`;
+                return;
+            }
+
+            // Aggregate statistics per unique user
+            const userStats = {};
+            records.forEach(rec => {
+                const userKey = `${rec.name.trim()}__${rec.location.trim()}`;
+                if (!userStats[userKey]) {
+                    userStats[userKey] = {
+                        name: rec.name,
+                        location: rec.location,
+                        totalGames: 0,
+                        totalTries: 0
+                    };
+                }
+                userStats[userKey].totalGames += 1;
+                // If the player gave up (won === false), count as 10 tries
+                const effectiveTries = rec.won ? rec.guesses : 10;
+                userStats[userKey].totalTries += effectiveTries;
+            });
+
+            let userList = Object.values(userStats).map(u => ({
+                ...u,
+                avgGuesses: u.totalTries / u.totalGames
+            }));
+
+            // Sort ascending by average tries; tiebreak by most games played
+            userList.sort((a, b) => {
+                if (a.avgGuesses !== b.avgGuesses) {
+                    return a.avgGuesses - b.avgGuesses;
+                }
+                return b.totalGames - a.totalGames;
+            });
+
+            container.innerHTML = '';
+            const currentUser = getUserProfile();
+
+            userList.slice(0, 50).forEach((user, index) => {
+                const isMe = user.name === currentUser.name && user.location === currentUser.location;
+                const badge = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤';
+                const avgStr = (user.avgGuesses % 1 === 0) ? user.avgGuesses.toFixed(0) : user.avgGuesses.toFixed(1);
+
+                container.innerHTML += `
+                    <div class="dopamine-card ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}">
+                        <div class="medal-badge">${badge}</div>
+                        <div class="card-info">
+                            <div class="card-name">${user.name} ${isMe ? '<span class="me-tag">אתה</span>' : ''}</div>
+                            <div class="card-location">📍 ${user.location} • ${user.totalGames} משחקים</div>
+                        </div>
+                        <div>
+                            <div class="card-stat">${avgStr} ממוצע ניחושים</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = '<div class="empty-leaderboard">שגיאה בטעינת טבלת המובילים</div>';
+    }
+}
+    
+function shareGame(platform) {
+    const usedHintsCount = (unlockedClues.closestNeighborUsed ? 1 : 0) + (unlockedClues.fiveOptionsUsed ? 1 : 0);
+    const finalGuesses = 10 - attempts;
+    const day = getGameDayIndex() + 1;
+    
+    let resultEmojis = "";
+    if (attempts > 0 && isGameOver && document.getElementById('vic-title').innerText.includes("פגיעה")) {
+        resultEmojis = "🎯 פגעתי בול!";
+    } else {
+        resultEmojis = "🏳️ לא הצלחתי היום...";
+    }
+    
+    const textToShare = `IsraMaster האתגר היומי #יעד_${day}\n${resultEmojis}\n🛰️ ניסיונות: ${finalGuesses}/10\n🔮 רמזים שנוצלו: ${usedHintsCount}/2\n\nבואו לנסות גם אתם ב-isramaster.com! 🗺️✨`;
+    
+    if (platform === 'whatsapp') {
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`;
+        window.open(url, '_blank');
+    } else if (platform === 'instagram') {
+        const instagramUrl = `instagram://sharesheet?text=${encodeURIComponent(textToShare)}`;
+        window.location.href = instagramUrl;
+        
+        setTimeout(() => {
+            navigator.clipboard.writeText(textToShare).then(() => {
+                alert("📋 נתוני המשחק הועתקו ללוח! אם האפליקציה לא נפתחה אוטומטית, תוכלו לפתוח את האינסטגרם ולהדביק ישירות בסטורי שלכם 📸");
+            }).catch(err => {
+                console.error('שגיאה בהעתקה', err);
+            });
+        }, 800);
+    }
+}
+
+function fireDopamineConfetti() {
+    if (typeof confetti === 'function') {
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        setTimeout(() => {
+            confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0 } });
+            confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1 } });
+        }, 250);
+    }
+}
+
+function endGame(win, remaining, alreadyProcessed = false) {
+    isGameOver = true;
+    closeConfirm();
+    document.getElementById('cityInput').disabled = true;
+    document.getElementById('submitBtn').disabled = true;
+
+    let stats = JSON.parse(localStorage.getItem('israeleStats')) || { played:0, wins:0, streak:0, totalGuesses:0, history: {}, gaveUpCount: 0 };
+    const today = getDailyKey();
+
+    if (!stats.history[today]) stats.history[today] = { guessesToday: [], clueGuessesToday: [], isGameOverToday: false };
+    
+    attempts = remaining;
+
+    let scoreToSubmit = null;
+
+    if (!alreadyProcessed && !stats.history[today].isGameOverToday) {
+        stats.played = (stats.played || 0) + 1;
+        stats.history[today].isGameOverToday = true;
+        stats.history[today].lastResultWasWin = win;
+        stats.history[today].lastAttemptsCount = remaining;
+        if(win) { 
+            stats.wins = (stats.wins || 0) + 1; 
+            stats.streak = (stats.streak || 0) + 1; 
+            stats.totalGuesses = (stats.totalGuesses || 0) + (10 - remaining); 
+            fireDopamineConfetti();
+        } else { 
+            stats.streak = 0; 
+            if (remaining > 0) {
+                stats.gaveUpCount = (stats.gaveUpCount || 0) + 1;
+            }
+        }
+        localStorage.setItem('israeleStats', JSON.stringify(stats));
+        scoreToSubmit = { win: win, guesses: 10 - remaining };
+    }
+    
+    const usedHintsCount = (unlockedClues.closestNeighborUsed ? 1 : 0) + (unlockedClues.fiveOptionsUsed ? 1 : 0);
+    document.getElementById('hints-count-summary').innerHTML = `🔮 השתמשת ב-<b>${usedHintsCount}</b> מתוך 2 הרמזים האפשריים.`;
+
+    document.getElementById('st-played').innerText = stats.played || 0;
+    document.getElementById('st-winpct').innerText = stats.played > 0 ? Math.round(((stats.wins || 0) / stats.played) * 100) + "%" : "0%";
+    document.getElementById('st-streak').innerText = stats.streak || 0;
+    document.getElementById('st-avg').innerText = stats.wins > 0 ? ((stats.totalGuesses || 0) / stats.wins).toFixed(1) : "0";
+    
+    document.getElementById('vic-title').innerText = win ? "🏆 פגיעה בול! ניצחון מרהיב!" : "לא היום... 🚩";
+    document.getElementById('vic-msg').innerText = `היעד היה: ${target.name}`;
+    
+    L.marker([target.lat, target.lon]).addTo(map).bindPopup(`<b>${target.name}</b>`).openPopup();
+    if (!alreadyProcessed) {
+         const sidebarPadding = window.innerWidth > 850 ? [400, 0] : [0, 0];
+         map.flyTo([target.lat, target.lon], 12, { paddingTopLeft: sidebarPadding });
+    }
+
+    // Always show the daily settlement (win/lose + stats) first.
+    document.getElementById('leaderboard-toggle').classList.add('visible');
+    showVictoryOverlay();
+
+    const user = getUserProfile();
+    if (scoreToSubmit && user.name && !user.anonymous) {
+        sendScoreToBackend(scoreToSubmit.win, scoreToSubmit.guesses);
+    } else if (scoreToSubmit && !user.name && !user.anonymous) {
+        // First-ever finish with no profile decision yet: let them see the result first,
+        // then invite them to join the leaderboard (or stay anonymous).
+        pendingScore = scoreToSubmit;
+        setTimeout(() => {
+            document.getElementById('user-profile-overlay').style.display = 'flex';
+        }, 4000);
+    }
+}
+
+function toggleSidebar(forceOpen) {
+    sidebar.classList.add('transitioning');
+    sidebar.style.transform = '';
+    if (forceOpen === true) sidebar.classList.add('open');
+    else if (forceOpen === false) sidebar.classList.remove('open');
+    else sidebar.classList.toggle('open');
+}
+
+function startGame() {
+    document.getElementById('setup-overlay').style.display = 'none';
+    if (!localStorage.getItem('israeleTutorialSeen')) {
+        showTutorial();
+    }
+}
+function toggleInstructions(show) { document.getElementById('how-to-play-overlay').style.display = show ? 'flex' : 'none'; }
+let nextGameCountdownInterval = null;
+
+function startNextGameCountdown() {
+    const el = document.getElementById('next-game-countdown');
+    if (!el) return;
+    if (nextGameCountdownInterval) clearInterval(nextGameCountdownInterval);
+
+    function tick() {
+        const msLeft = getMsUntilNextIsraelMidnight();
+        const totalSec = Math.max(0, Math.floor(msLeft / 1000));
+        const h = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+        const s = String(totalSec % 60).padStart(2, '0');
+        if (totalSec <= 0) {
+            el.innerText = '🔄 היעד החדש כבר כאן! רעננו את הדף';
+            clearInterval(nextGameCountdownInterval);
+        } else {
+            el.innerText = `⏳ היעד הבא בעוד ${h}:${m}:${s}`;
+        }
+    }
+    tick();
+    nextGameCountdownInterval = setInterval(tick, 1000);
+}
+
+function showVictoryOverlay() {
+    renderRealLeaderboard();
+    document.getElementById('victory-overlay').style.display = 'flex';
+    startNextGameCountdown();
+}
+
+function hideOverlay() {
+    document.getElementById('victory-overlay').style.display = 'none';
+    if (nextGameCountdownInterval) { clearInterval(nextGameCountdownInterval); nextGameCountdownInterval = null; }
+}
+function showConfirm() { if(!isGameOver) document.getElementById('confirm-overlay').style.display = 'flex'; }
+function closeConfirm() { document.getElementById('confirm-overlay').style.display = 'none'; }
+
+const tutorialSteps = [
+    {
+        type: "intro",
+        icon: "👋",
+        title: "ברוכים הבאים ל-IsraMaster!",
+        text: "עכשיו נעביר אתכם על המסך האמיתי, שלב אחר שלב, ונראה לכם בדיוק איפה ללחוץ ומה לעשות. בואו נתחיל!"
+    },
+    {
+        type: "spotlight",
+        targetId: "cityInput",
+        title: "שלב 1: לחצו כאן",
+        text: "זו תיבת ההקלדה. לחצו עליה עם האצבע או העכבר כדי להתחיל להקליד את שם היישוב שאתם מנחשים.",
+        actionEvent: "focus"
+    },
+    {
+        type: "spotlight",
+        targetId: "submitBtn",
+        title: "שלב 2: שליחת הניחוש",
+        text: "אחרי שבחרתם יישוב מתוך הרשימה שנפתחת, לחצו על הכפתור הגדול הזה כדי לשלוח את הניחוש. שימו לב: זה ניחוש אמיתי במשחק!",
+        actionEvent: "click"
+    },
+    {
+        type: "spotlight",
+        targetId: "map",
+        title: "שלב 3: קראו את המפה",
+        text: "כאן על המפה יופיע סמן צבעוני במקום שניחשתם. אדום חזק = קרוב מאוד ליעד. צהוב בהיר = רחוק. חץ קטן יראה לכם באיזה כיוון היעד האמיתי נמצא."
+    },
+    {
+        type: "spotlight",
+        targetId: "lifePoints",
+        title: "שלב 4: עקבו אחרי הניסיונות",
+        text: "כל עיגול קטן כאן מייצג ניסיון שנשאר לכם. יש לכם 10 ניסיונות בסך הכל כדי לנחש נכון את היישוב."
+    },
+    {
+        type: "spotlight",
+        targetId: "clue-hub-trigger",
+        title: "שלב 5: רמזים מיוחדים",
+        text: "אם תתקרבו עד 10 ק\"מ מהיעד, הכפתור הזה יתחיל להבהב. לחצו עליו כדי לפתוח את מרכז הרמזים ולקבל עזרה נוספת.",
+        actionEvent: "click"
+    },
+    {
+        type: "outro",
+        icon: "🎉",
+        title: "מוכנים להתחיל!",
+        text: "זהו, זה כל מה שצריך לדעת! לחצו על הכפתור למטה כדי להמשיך לשחק. בהצלחה!"
+    }
+];
+let tutorialIndex = 0;
+let currentStepCleanup = null;
+
+function showTutorial() {
+    tutorialIndex = 0;
+    document.getElementById('tutorial-skip-global').style.display = 'block';
+    renderTutorialStep();
+}
+
+function buildDots(containerId) {
+    const dotsContainer = document.getElementById(containerId);
+    dotsContainer.innerHTML = '';
+    tutorialSteps.forEach((_, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'tutorial-dot' + (i === tutorialIndex ? ' active' : '');
+        dotsContainer.appendChild(dot);
+    });
+}
+
+function renderTutorialStep() {
+    if (currentStepCleanup) { currentStepCleanup(); currentStepCleanup = null; }
+    const step = tutorialSteps[tutorialIndex];
+
+    if (step.type === 'spotlight') {
+        prepareSpotlightUI(step, () => showSpotlightStep(step));
+    } else {
+        document.getElementById('spotlight-layer').style.display = 'none';
+        showCenterStep(step);
+    }
+}
+
+function showCenterStep(step) {
+    document.getElementById('tutorial-intro-overlay').style.display = 'flex';
+    document.getElementById('tutorial-icon').innerText = step.icon || '';
+    document.getElementById('tutorial-title').innerText = step.title;
+    document.getElementById('tutorial-text').innerText = step.text;
+
+    document.getElementById('tutorial-prev').style.visibility = tutorialIndex === 0 ? 'hidden' : 'visible';
+    document.getElementById('tutorial-next').innerText = tutorialIndex === tutorialSteps.length - 1 ? 'התחלת המשחק! 🎮' : 'הבא ⬅️';
+    buildDots('tutorial-dots');
+}
+
+function prepareSpotlightUI(step, callback) {
+    const isMobile = window.innerWidth <= 850;
+    if (!isMobile) { callback(); return; }
+    if (step.targetId === 'map') {
+        toggleSidebar(false);
+    } else {
+        toggleSidebar(true);
+    }
+    setTimeout(callback, 380);
+}
+
+function showSpotlightStep(step) {
+    document.getElementById('tutorial-intro-overlay').style.display = 'none';
+    document.getElementById('spotlight-layer').style.display = 'block';
+
+    document.getElementById('tutorial-title-s').innerText = step.title;
+    document.getElementById('tutorial-text-s').innerText = step.text;
+    document.getElementById('tutorial-prev-s').style.visibility = tutorialIndex === 0 ? 'hidden' : 'visible';
+    document.getElementById('tutorial-next-s').innerText = tutorialIndex === tutorialSteps.length - 1 ? 'הבא ⬅️' : 'הבא ⬅️';
+    buildDots('tutorial-dots-s');
+
+    const targetEl = document.getElementById(step.targetId);
+    if (!targetEl) { tutorialNext(); return; }
+
+    const position = () => positionSpotlight(targetEl);
+    position();
+
+    const resizeHandler = () => position();
+    window.addEventListener('resize', resizeHandler);
+
+    let actionHandler = null;
+    if (step.actionEvent) {
+        actionHandler = () => tutorialNext();
+        targetEl.addEventListener(step.actionEvent, actionHandler, { once: true });
+    }
+
+    currentStepCleanup = () => {
+        window.removeEventListener('resize', resizeHandler);
+        if (actionHandler) targetEl.removeEventListener(step.actionEvent, actionHandler);
+    };
+}
+
+function positionSpotlight(targetEl) {
+    const pad = 10;
+    const rect = targetEl.getBoundingClientRect();
+    const hole = {
+        top: Math.max(rect.top - pad, 0),
+        left: Math.max(rect.left - pad, 0),
+        width: rect.width + pad * 2,
+        height: rect.height + pad * 2
+    };
+
+    const ring = document.getElementById('sp-ring');
+    ring.style.top = hole.top + 'px';
+    ring.style.left = hole.left + 'px';
+    ring.style.width = hole.width + 'px';
+    ring.style.height = hole.height + 'px';
+
+    document.getElementById('sp-dim-top').style.cssText = `top:0; left:0; width:100vw; height:${hole.top}px;`;
+    document.getElementById('sp-dim-bottom').style.cssText = `top:${hole.top + hole.height}px; left:0; width:100vw; height:calc(100vh - ${hole.top + hole.height}px);`;
+    document.getElementById('sp-dim-left').style.cssText = `top:${hole.top}px; left:0; width:${hole.left}px; height:${hole.height}px;`;
+    document.getElementById('sp-dim-right').style.cssText = `top:${hole.top}px; left:${hole.left + hole.width}px; width:calc(100vw - ${hole.left + hole.width}px); height:${hole.height}px;`;
+
+    const tooltip = document.getElementById('sp-tooltip');
+    tooltip.style.visibility = 'hidden';
+    requestAnimationFrame(() => {
+        const tw = tooltip.offsetWidth;
+        const th = tooltip.offsetHeight;
+        let top = hole.top + hole.height + 18;
+        if (top + th > window.innerHeight - 10) {
+            top = hole.top - th - 18;
+            if (top < 10) top = Math.max(10, window.innerHeight - th - 10);
+        }
+        let left = hole.left + hole.width / 2 - tw / 2;
+        left = Math.min(Math.max(left, 12), window.innerWidth - tw - 12);
+        tooltip.style.top = top + 'px';
+        tooltip.style.left = left + 'px';
+        tooltip.style.visibility = 'visible';
+    });
+}
+
+function tutorialNext() {
+    if (tutorialIndex < tutorialSteps.length - 1) {
+        tutorialIndex++;
+        renderTutorialStep();
+    } else {
+        finishTutorial();
+    }
+}
+
+function tutorialPrev() {
+    if (tutorialIndex > 0) {
+        tutorialIndex--;
+        renderTutorialStep();
+    }
+}
+
+function finishTutorial() {
+    if (currentStepCleanup) { currentStepCleanup(); currentStepCleanup = null; }
+    localStorage.setItem('israeleTutorialSeen', '1');
+    document.getElementById('tutorial-intro-overlay').style.display = 'none';
+    document.getElementById('spotlight-layer').style.display = 'none';
+    document.getElementById('tutorial-skip-global').style.display = 'none';
+    if (window.innerWidth <= 850) toggleSidebar(false);
+}
+
+function skipTutorial() {
+    finishTutorial();
+}
+
+function openSettings() {
+    const user = getUserProfile();
+    document.getElementById('settingsNameInput').value = user.name || '';
+    document.getElementById('settingsLocationInput').value = user.location || '';
+
+    const note = document.getElementById('profileChangeNote');
+    if (note) {
+        const status = getProfileChangeStatus();
+        note.innerText = status.canChange
+            ? 'אפשר לעדכן שם/מקום מגורים (ניתן לשנות פעם ב-3 חודשים).'
+            : `⏳ שינית לאחרונה - אפשר לשנות שוב בעוד ${status.daysLeft} ימים.`;
+    }
+
+    document.getElementById('settings-overlay').style.display = 'flex';
+}
+
+function closeSettings() {
+    const name = document.getElementById('settingsNameInput').value.trim();
+    const location = document.getElementById('settingsLocationInput').value.trim();
+    const current = getUserProfile();
+    const isRealChange = (name && name !== current.name) || (location && location !== current.location);
+
+    if (isRealChange) {
+        const ok = changeUserProfile(name || current.name, location || current.location);
+        if (!ok) return; // cooldown alert already shown; keep the settings panel open
+    }
+    document.getElementById('settings-overlay').style.display = 'none';
+}
+
+function updateMarkerScale(val) {
+    document.documentElement.style.setProperty('--marker-scale', val);
+    localStorage.setItem('israeleMarkerScale', val);
+}
+
+function applySavedMarkerScale() {
+    const saved = localStorage.getItem('israeleMarkerScale');
+    if (saved) {
+        document.documentElement.style.setProperty('--marker-scale', saved);
+        const slider = document.getElementById('markerScaleSlider');
+        if (slider) slider.value = saved;
+    }
+}
+
+applySavedMarkerScale();
+window.onload = async function() {
+    await initServerTime();
+    resetLeaderboardIfNeeded(); // fire-and-forget, guarded so it only ever runs once
+    loadData();
+};
+</script>
+</body>
+</html>
