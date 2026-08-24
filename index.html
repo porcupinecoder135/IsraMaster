@@ -120,6 +120,27 @@
         #leaderboard-toggle:active { transform: scale(0.95); }
         #leaderboard-toggle.visible { display: flex; }
 
+        /* Anonymous Badge Floating Button */
+        #anon-badge-toggle {
+            position: fixed; top: 139px; left: 15px; z-index: 2005;
+            background: #34495e; color: white; border: 2px solid rgba(255,255,255,0.25);
+            width: 52px; height: 52px; border-radius: 50%; font-size: 20px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Replay Banner */
+        #replay-banner {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+            z-index: 2500; background: rgba(26, 42, 108, 0.95); color: white; border: 2px solid var(--gold);
+            padding: 12px 25px; border-radius: 30px; font-weight: bold; font-size: 18px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: none; align-items: center; gap: 15px;
+            backdrop-filter: blur(5px);
+        }
+        #replay-banner button {
+            background: var(--accent); color: white; border: none; padding: 6px 14px;
+            border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 14px;
+        }
+
         .settings-row { margin: 25px 0; }
         .settings-row-labels { display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; color: #555; margin-bottom: 10px; }
         #markerScaleSlider { width: 100%; height: 12px; cursor: pointer; accent-color: var(--accent); }
@@ -128,9 +149,9 @@
             border-radius: 15px; margin-top: 15px; min-height: 90px;
         }
 
-        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #tutorial-intro-overlay, #settings-overlay, #user-profile-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
+        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #tutorial-intro-overlay, #settings-overlay, #user-profile-overlay, #anon-modal-overlay, #replay-history-overlay, #name-verify-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
         #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
-        #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #settings-overlay, #user-profile-overlay { background: rgba(0,0,0,0.85); display: none; }
+        #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #settings-overlay, #user-profile-overlay, #anon-modal-overlay, #replay-history-overlay, #name-verify-overlay { background: rgba(0,0,0,0.85); display: none; }
 
         #tutorial-intro-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); z-index: 3200; display: none; }
         .tutorial-modal {
@@ -241,6 +262,12 @@
         .card-location { font-size: 12px; color: #666; font-weight: 600; }
         .card-stat { text-align: left; font-size: 16px; font-weight: 900; color: var(--primary); }
 
+        .btn-replay-card {
+            background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 10px;
+            font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; transition: transform 0.2s;
+        }
+        .btn-replay-card:active { transform: scale(0.95); }
+
         .empty-leaderboard { text-align: center; padding: 20px; color: #777; font-size: 14px; font-weight: bold; background: #f9f9f9; border-radius: 15px; border: 1px dashed #ccc; }
         .next-game-countdown { margin-top: 12px; font-size: 13px; font-weight: bold; opacity: 0.85; letter-spacing: 0.5px; }
 
@@ -273,6 +300,11 @@
             50% { transform: scale(1.02); }
         }
 
+        .past-game-item {
+            background: #f8f9fa; border: 1px solid #ddd; border-radius: 12px; padding: 12px;
+            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; text-align: right;
+        }
+
         @media (max-width: 850px) {
             #sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65vh; transform: translateY(100%); border-radius: 25px 25px 0 0; transition: transform 0.1s linear; }
             #sidebar.open { transform: translateY(0); }
@@ -287,6 +319,11 @@
 </head>
 <body>
 
+<div id="replay-banner">
+    <span id="replay-banner-text">אתה צופה במשחק של ____</span>
+    <button onclick="stopReplay()">יציאה ✖️</button>
+</div>
+
 <div id="setup-overlay">
     <div style="font-size: 45px; font-weight: 900; letter-spacing: 4px;">ISRAMASTER</div>
     <p style="margin-bottom: 30px; opacity: 0.8;">האתגר הגיאוגרפי היומי</p>
@@ -300,10 +337,46 @@
     <div class="modal" style="max-width: 360px;">
         <h3 style="margin-top:0; color: var(--primary);">👤 רוצה להופיע בטבלת המובילים?</h3>
         <p style="font-size:14px; color:#555; line-height:1.4;">ההרשמה משמשת אך ורק כדי להציג אותך בטבלת המובילים המשותפת. אפשר גם להישאר אנונימי/ת ולהמשיך לשחק בלי להירשם.</p>
-        <input type="text" id="popNameInput" placeholder="שם..." style="margin-bottom: 10px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
-        <input type="text" id="popLocationInput" placeholder="מאיפה אתה? (למשל: תל אביב)" style="margin-bottom: 15px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
-        <button class="btn-main" onclick="saveInitialProfile()">הרשמה לטבלת המובילים 🚀</button>
+        <input type="text" id="popNameInput" placeholder="שם פרטי בלבד..." style="margin-bottom: 10px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
+        <input type="text" id="popLocationInput" placeholder="מאיפה אתה? (בחרו או הקלידו)" list="cityList" autocomplete="off" style="margin-bottom: 15px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
+        <button class="btn-main" onclick="processInitialProfileSubmit()">הרשמה לטבלת המובילים 🚀</button>
         <button class="btn-main btn-secondary" onclick="stayAnonymous()">הישאר אנונימי 🙈</button>
+    </div>
+</div>
+
+<div id="name-verify-overlay" style="z-index: 3600;">
+    <div class="modal" style="max-width: 340px;">
+        <h3 style="color: var(--primary); margin-top:0;">❓ אימות שם פרטי</h3>
+        <p id="name-verify-text" style="font-size:15px; color:#333; line-height:1.4;"></p>
+        <button class="btn-main" onclick="confirmFirstName(true)">כן, זה השם הפרטי שלי 👍</button>
+        <button class="btn-main btn-secondary" onclick="confirmFirstName(false)">לא, אעדכן ✏️</button>
+    </div>
+</div>
+
+<div id="anon-modal-overlay">
+    <div class="modal" style="max-width: 340px;">
+        <h3 style="margin-top:0; color: var(--primary);">🙈 שחקנים אנונימיים</h3>
+        <p style="font-size:13.5px; color:#666; margin-bottom:15px;">כמות השחקנים שבחרו לשחק באופן אנונימי:</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; text-align: right;">
+            <div style="background:#f2f2f2; padding:12px; border-radius:12px; font-weight:bold; color:#2c3e50;">
+                📅 היום: <span id="anon-count-today" style="color:var(--accent);">0</span>
+            </div>
+            <div style="background:#f2f2f2; padding:12px; border-radius:12px; font-weight:bold; color:#2c3e50;">
+                🗓️ השבוע: <span id="anon-count-week" style="color:var(--accent);">0</span>
+            </div>
+            <div style="background:#f2f2f2; padding:12px; border-radius:12px; font-weight:bold; color:#2c3e50;">
+                🏆 כל הזמנים: <span id="anon-count-all" style="color:var(--accent);">0</span>
+            </div>
+        </div>
+        <button class="btn-main btn-secondary" style="margin-top:20px;" onclick="closeAnonModal()">סגירה</button>
+    </div>
+</div>
+
+<div id="replay-history-overlay">
+    <div class="modal" style="max-width: 380px;">
+        <h3 style="margin-top:0; color: var(--primary);">📜 משחקי העבר שלי</h3>
+        <div id="past-games-list" style="max-height: 300px; overflow-y: auto; margin: 15px 0;"></div>
+        <button class="btn-main btn-secondary" onclick="closeReplayHistoryModal()">סגירה</button>
     </div>
 </div>
 
@@ -400,7 +473,7 @@
             <label style="font-weight: bold; font-size: 14px; color: #333;">שם שחקן:</label>
             <input type="text" id="settingsNameInput" placeholder="השם שלך" style="margin-top: 4px; margin-bottom: 10px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
             <label style="font-weight: bold; font-size: 14px; color: #333;">מאיפה אתה?:</label>
-            <input type="text" id="settingsLocationInput" placeholder="למשל: תל אביב" style="margin-top: 4px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
+            <input type="text" id="settingsLocationInput" placeholder="למשל: תל אביב" list="cityList" autocomplete="off" style="margin-top: 4px; background: #f2f2f2; color: #222; border: 1px solid #ccc;">
             <div id="profileChangeNote" style="font-size: 12px; color: #888; margin-top: 6px;"></div>
         </div>
 
@@ -430,6 +503,7 @@
 <button id="mobile-toggle" onclick="toggleSidebar(true)">ניחוש 📊</button>
 <button id="settings-toggle" onclick="openSettings()" title="הגדרות תצוגה">⚙️</button>
 <button id="leaderboard-toggle" onclick="showVictoryOverlay()" title="טבלת המובילים">🏆</button>
+<button id="anon-badge-toggle" onclick="openAnonModal()" title="שחקנים אנונימיים">🙈</button>
 
 <div id="sidebar">
     <div class="swipe-handle" id="swipeHandle"></div>
@@ -469,6 +543,8 @@
             <div class="stat-item"><span class="stat-val" id="st-streak">0</span><span class="stat-lbl">רצף</span></div>
             <div class="stat-item"><span class="stat-val" id="st-avg">0</span><span class="stat-lbl">ממוצע ניסיונות</span></div>
         </div>
+
+        <button class="btn-main btn-secondary" style="margin-bottom: 12px;" onclick="openPastGamesModal()">📜 צפה במשחקי העבר שלי</button>
 
         <div class="leaderboard-section">
             <div class="time-tabs">
@@ -513,11 +589,6 @@ if (!firebase.apps.length) {
 }
 const db = firebase.database();
 
-// --- SERVER-SYNCED TIME (prevents cheating by changing the device clock) ---
-// Firebase exposes the difference between the device clock and Google's servers.
-// We use that offset (instead of the raw device Date) for everything date-related,
-// so a player who fiddles with their phone's clock/timezone can't unlock tomorrow's
-// puzzle early or replay a past one.
 let serverTimeOffset = 0;
 
 function getServerNow() {
@@ -532,21 +603,16 @@ function initServerTime() {
             serverTimeOffset = snap.val() || 0;
             finish();
         }, () => finish());
-        // Don't block the app forever if we're offline on first load.
         setTimeout(finish, 2500);
     });
 }
 
-// --- ONE-TIME LEADERBOARD RESET ---
-// Wipes every past score so the leaderboard (today / week / all-time) starts fresh.
-// Guarded by a Firebase transaction so that out of all players loading the app,
-// only the very first one actually performs the deletion.
 async function resetLeaderboardIfNeeded() {
     try {
         const metaRef = db.ref('meta/leaderboardResetV1');
         const result = await metaRef.transaction((current) => {
             if (current === null) return { claimedAt: Date.now() };
-            return; // already claimed by someone else - abort, do nothing
+            return;
         });
         if (result && result.committed) {
             await db.ref('scores').remove();
@@ -564,6 +630,9 @@ let errorTimeout;
 let currentGuessesList = [];
 let currentLeaderboardFilter = 'today';
 let pendingScore = null;
+let replayMarkers = [];
+let replayTimeout = null;
+let pendingFirstName = "";
 
 let unlockedClues = { 
     eligible: false, 
@@ -642,7 +711,7 @@ sidebar.addEventListener('touchend', () => {
 
 map.on('click', () => { if(window.innerWidth <= 850) toggleSidebar(false); });
 
-const PROFILE_CHANGE_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000; // ~3 months
+const PROFILE_CHANGE_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
 
 function generateUserId() {
     return 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
@@ -660,7 +729,6 @@ function getUserProfile() {
     return profile;
 }
 
-// Used for the very first time someone signs up - no cooldown applies here.
 function saveUserProfile(name, location) {
     const profile = getUserProfile();
     profile.name = name.trim();
@@ -674,9 +742,16 @@ function markUserAnonymous() {
     const profile = getUserProfile();
     profile.anonymous = true;
     localStorage.setItem('israeleUserProfile', JSON.stringify(profile));
+    
+    // Track anonymous play in backend
+    try {
+        db.ref('anonymous_plays').push({
+            dateKey: getDailyKey(),
+            timestamp: Date.now()
+        });
+    } catch(e){}
 }
 
-// Can the player edit their name/location right now, or are they still in the 3-month cooldown?
 function getProfileChangeStatus() {
     const profile = getUserProfile();
     if (!profile.name || !profile.lastChangeAt) return { canChange: true, daysLeft: 0 };
@@ -686,8 +761,6 @@ function getProfileChangeStatus() {
     return { canChange: false, daysLeft };
 }
 
-// Pushes a renamed/relocated profile to every one of that player's past leaderboard
-// entries in Firebase, so the new name/location shows up on every device, not just this one.
 async function propagateProfileUpdate(userId, name, location) {
     try {
         const snapshot = await db.ref('scores').orderByChild('userId').equalTo(userId).once('value');
@@ -703,7 +776,6 @@ async function propagateProfileUpdate(userId, name, location) {
     }
 }
 
-// Applies a name/location change from the settings screen, enforcing the 3-month cooldown.
 function changeUserProfile(name, location) {
     const status = getProfileChangeStatus();
     if (!status.canChange) {
@@ -716,15 +788,22 @@ function changeUserProfile(name, location) {
     return true;
 }
 
-function getGameDayIndex() {
-    const { year, month, day } = getIsraelDateParts(0);
+function getGameDayIndex(dateKeyOverride = null) {
+    let year, month, day;
+    if (dateKeyOverride) {
+        const parts = dateKeyOverride.replace('v7-', '').split('-');
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10);
+        day = parseInt(parts[2], 10);
+    } else {
+        const p = getIsraelDateParts(0);
+        year = p.year; month = p.month; day = p.day;
+    }
     const todayUTC = Date.UTC(year, month - 1, day);
     const startUTC = Date.UTC(2026, 5, 24);
     return Math.floor(Math.abs(todayUTC - startUTC) / (1000 * 60 * 60 * 24));
 }
 
-// Reads the current (server-corrected) date as it appears on an Israeli clock,
-// regardless of the player's own device timezone or clock setting.
 function getIsraelDateParts(offsetDays = 0) {
     const t = getServerNow() - offsetDays * 24 * 60 * 60 * 1000;
     const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -738,7 +817,6 @@ function getDailyKey(offsetDays = 0) {
     return `v7-${year}-${month}-${day}`;
 }
 
-// Milliseconds remaining until the next puzzle unlocks (00:00 Israel time).
 function getMsUntilNextIsraelMidnight() {
     const now = getServerNow();
     const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -763,6 +841,55 @@ function seededShuffle(arr, seedString) {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;
+}
+
+function getTargetForDate(dateKey) {
+    const dayIndex = getGameDayIndex(dateKey);
+    const changeoverIndex = 45;
+
+    if (dayIndex >= changeoverIndex) {
+        const availablePool = settlementPool.filter(sName => allCities.some(c => c.name === sName));
+        const poolIndex = dayIndex - changeoverIndex;
+
+        let hash = 0;
+        for (let i = 0; i < dateKey.length; i++) hash = ((hash << 5) - hash) + dateKey.charCodeAt(i);
+        const seededRandom = Math.abs(Math.sin(hash));
+
+        if (poolIndex < availablePool.length) {
+            const chosenName = availablePool[poolIndex];
+            return allCities.find(c => c.name === chosenName);
+        } else {
+            const citiesOutsidePool = allCities.filter(c => !settlementPool.includes(c.name));
+            if (citiesOutsidePool.length > 0) {
+                return citiesOutsidePool[Math.floor(seededRandom * citiesOutsidePool.length)];
+            } else {
+                return allCities[Math.floor(seededRandom * allCities.length)];
+            }
+        }
+    } else {
+        const baseSequence = ["כרי דשא", "קרית גת", "אילת", "גן נר", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "הר עמשא", "אשקלון"];
+        const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
+
+        const validTargets = allCities.filter(city => {
+            const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
+            const isExcludedByName = extraExclusions.includes(city.name);
+            return !(isExcludedByKeyword || isExcludedByName);
+        });
+
+        if (dayIndex < customSequence.length) {
+            const nextCityName = customSequence[dayIndex];
+            let found = allCities.find(c => c.name === nextCityName);
+            if (!found) found = validTargets[dayIndex % validTargets.length];
+            return found;
+        } else {
+            const remainingTargets = validTargets.filter(city => !customSequence.includes(city.name));
+            let hash = 0;
+            for (let i = 0; i < dateKey.length; i++) hash = ((hash << 5) - hash) + dateKey.charCodeAt(i);
+            const seededRandom = Math.abs(Math.sin(hash));
+            
+            return remainingTargets[Math.floor(seededRandom * remainingTargets.length)];
+        }
+    }
 }
 
 async function loadData() {
@@ -794,55 +921,7 @@ async function loadData() {
         }
 
         if (!target) {
-            const dayIndex = getGameDayIndex();
-            const changeoverIndex = 45;
-
-            if (dayIndex >= changeoverIndex) {
-                const availablePool = settlementPool.filter(sName => allCities.some(c => c.name === sName));
-                const poolIndex = dayIndex - changeoverIndex;
-
-                const seedStr = getDailyKey();
-                let hash = 0;
-                for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
-                const seededRandom = Math.abs(Math.sin(hash));
-
-                if (poolIndex < availablePool.length) {
-                    const chosenName = availablePool[poolIndex];
-                    target = allCities.find(c => c.name === chosenName);
-                } else {
-                    const citiesOutsidePool = allCities.filter(c => !settlementPool.includes(c.name));
-                    if (citiesOutsidePool.length > 0) {
-                        target = citiesOutsidePool[Math.floor(seededRandom * citiesOutsidePool.length)];
-                    } else {
-                        target = allCities[Math.floor(seededRandom * allCities.length)];
-                    }
-                }
-            } else {
-                const baseSequence = ["כרי דשא", "קרית גת", "אילת", "גן נר", "נווה ירק", "עדנים", "ירוחם", "כפר הנשיא", "איתנים", "לב יתיר", "גינוסר", "הר עמשא", "אשקלון"];
-                const customSequence = seededShuffle(baseSequence, "isramaster-fixed-seed-2026");
-
-                const validTargets = allCities.filter(city => {
-                    const isExcludedByKeyword = excludeKeywords.some(kw => city.name.includes(kw));
-                    const isExcludedByName = extraExclusions.includes(city.name);
-                    return !(isExcludedByKeyword || isExcludedByName);
-                });
-
-                if (dayIndex < customSequence.length) {
-                    const nextCityName = customSequence[dayIndex];
-                    target = allCities.find(c => c.name === nextCityName);
-                    if (!target) {
-                        target = validTargets[dayIndex % validTargets.length];
-                    }
-                } else {
-                    const remainingTargets = validTargets.filter(city => !customSequence.includes(city.name));
-                    const seedStr = getDailyKey();
-                    let hash = 0;
-                    for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
-                    const seededRandom = Math.abs(Math.sin(hash));
-                    
-                    target = remainingTargets[Math.floor(seededRandom * remainingTargets.length)];
-                }
-            }
+            target = getTargetForDate(getDailyKey());
         }
 
         const container = document.getElementById('lifePoints');
@@ -1158,26 +1237,45 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function saveInitialProfile() {
-    const name = document.getElementById('popNameInput').value.trim();
+function processInitialProfileSubmit() {
+    const rawName = document.getElementById('popNameInput').value.trim();
     const loc = document.getElementById('popLocationInput').value.trim();
-    if (!name || !loc) {
+    if (!rawName || !loc) {
         alert("אנא מלא את שני השדות כדי להמשיך.");
         return;
     }
+
+    const words = rawName.split(/\s+/);
+    if (words.length > 1) {
+        pendingFirstName = words[0];
+        document.getElementById('name-verify-text').innerText = `האם ${pendingFirstName} הוא השם הפרטי שלך?`;
+        document.getElementById('name-verify-overlay').style.display = 'flex';
+    } else {
+        completeSaveProfile(rawName, loc);
+    }
+}
+
+function confirmFirstName(isCorrect) {
+    document.getElementById('name-verify-overlay').style.display = 'none';
+    if (isCorrect) {
+        const loc = document.getElementById('popLocationInput').value.trim();
+        document.getElementById('popNameInput').value = pendingFirstName;
+        completeSaveProfile(pendingFirstName, loc);
+    }
+}
+
+function completeSaveProfile(name, loc) {
     saveUserProfile(name, loc);
     document.getElementById('user-profile-overlay').style.display = 'none';
 
     if (pendingScore) {
-        sendScoreToBackend(pendingScore.win, pendingScore.guesses);
+        sendScoreToBackend(pendingScore.win, pendingScore.guesses, pendingScore.guessesList);
         pendingScore = null;
     }
 
     renderRealLeaderboard();
 }
 
-// Player chose "stay anonymous" - remember that choice so we never nag them again,
-// and never send their result to the shared leaderboard.
 function stayAnonymous() {
     markUserAnonymous();
     document.getElementById('user-profile-overlay').style.display = 'none';
@@ -1191,7 +1289,7 @@ function switchLeaderboardTime(timeframe, btn) {
     renderRealLeaderboard();
 }
 
-async function sendScoreToBackend(win, guesses) {
+async function sendScoreToBackend(win, guesses, guessesList = []) {
     const user = getUserProfile();
     if (!user.name || user.anonymous) return;
 
@@ -1204,11 +1302,157 @@ async function sendScoreToBackend(win, guesses) {
             dateKey: getDailyKey(),
             timestamp: Date.now(),
             guesses: guesses,
-            won: win
+            won: win,
+            guessesList: guessesList || []
         });
     } catch (err) {
         console.error('Failed to submit score:', err);
     }
+}
+
+async function replayGame(playerName, guessesList, dateKey) {
+    hideOverlay();
+    document.getElementById('setup-overlay').style.display = 'none';
+    
+    const banner = document.getElementById('replay-banner');
+    document.getElementById('replay-banner-text').innerText = `אתה צופה במשחק של ${playerName}`;
+    banner.style.display = 'flex';
+
+    // Clear existing map layers / feedback
+    map.eachLayer(l => { if (l instanceof L.Marker) map.removeLayer(l); });
+    document.getElementById('feedback').innerHTML = '';
+    
+    const replayTarget = getTargetForDate(dateKey);
+
+    let i = 0;
+    function nextStep() {
+        if (i >= guessesList.length) {
+            L.marker([replayTarget.lat, replayTarget.lon]).addTo(map).bindPopup(`<b>${replayTarget.name}</b>`).openPopup();
+            return;
+        }
+
+        const cityName = guessesList[i];
+        const guess = allCities.find(c => c.name === cityName);
+        if (guess) {
+            const dist = calculateDistance(guess.lat, guess.lon, replayTarget.lat, replayTarget.lon);
+            const bearing = (Math.atan2(replayTarget.lon - guess.lon, replayTarget.lat - guess.lat) * 180 / Math.PI + 360) % 360;
+            const ratio = Math.pow(Math.min(dist / 150, 1), 0.35);
+            const color = `rgb(255, ${Math.floor(255 * ratio)}, ${Math.floor(100 * ratio)})`;
+
+            const iconHtml = `<div class="marker-bubble" style="border-color:${color}"><div>${guess.name}</div><div class="marker-distance">${dist.toFixed(1)} ק"מ <span class="marker-arrow" style="transform:rotate(${bearing}deg)">⬆️</span></div></div><div class="marker-dot" style="background-color:${color}"></div>`;
+
+            const icon = L.divIcon({ className: 'custom-marker', html: iconHtml, iconSize: [0, 0], iconAnchor: [0, 48] });
+            const m = L.marker([guess.lat, guess.lon], { icon: icon }).addTo(map);
+            replayMarkers.push(m);
+
+            const row = document.createElement('div');
+            row.className = 'guess-row';
+            row.style.background = color;
+            row.innerHTML = `<span>${guess.name}</span> <span>${dist.toFixed(1)} ק"מ <span style="display:inline-block; transform:rotate(${bearing}deg)">⬆️</span></span>`;
+            document.getElementById('feedback').prepend(row);
+
+            const sidebarPadding = window.innerWidth > 850 ? [400, 0] : [0, 0];
+            map.flyTo([guess.lat, guess.lon], 11, { paddingTopLeft: sidebarPadding, duration: 1 });
+        }
+        i++;
+        replayTimeout = setTimeout(nextStep, 2000);
+    }
+    nextStep();
+}
+
+function stopReplay() {
+    if (replayTimeout) clearTimeout(replayTimeout);
+    document.getElementById('replay-banner').style.display = 'none';
+    location.reload();
+}
+
+async function replayFirstPlayerToday() {
+    try {
+        const todayKey = getDailyKey();
+        const snapshot = await db.ref('scores').orderByChild('dateKey').equalTo(todayKey).once('value');
+        const data = snapshot.val();
+        if (!data) {
+            alert("אין עדיין משחקים שנרשמו היום!");
+            return;
+        }
+        const records = Object.values(data);
+        records.sort((a, b) => a.timestamp - b.timestamp);
+        const first = records[0];
+        if (first && first.guessesList) {
+            replayGame(first.name, first.guessesList, first.dateKey);
+        } else {
+            alert("לשחקן הראשון היום אין תיעוד ניחושים מפורט.");
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function openPastGamesModal() {
+    const stats = JSON.parse(localStorage.getItem('israeleStats')) || { history: {} };
+    const container = document.getElementById('past-games-list');
+    container.innerHTML = '';
+    
+    const keys = Object.keys(stats.history || {}).sort().reverse();
+    if (keys.length === 0) {
+        container.innerHTML = '<div class="empty-leaderboard">אין היסטוריית משחקים.</div>';
+    } else {
+        keys.forEach(k => {
+            const h = stats.history[k];
+            const dateStr = k.replace('v7-', '');
+            const item = document.createElement('div');
+            item.className = 'past-game-item';
+            item.innerHTML = `
+                <div>
+                    <b>תאריך: ${dateStr}</b><br>
+                    <span style="font-size:12px; color:#666;">${h.lastResultWasWin ? '🏆 ניצחון' : '🏳️ הפסד/ויתור'} (${h.guessesToday ? h.guessesToday.length : 0} ניחושים)</span>
+                </div>
+                <button class="btn-replay-card" onclick="replayMyPastGame('${k}')">צפה במשחק 👁️</button>
+            `;
+            container.appendChild(item);
+        });
+    }
+    document.getElementById('replay-history-overlay').style.display = 'flex';
+}
+
+function closeReplayHistoryModal() {
+    document.getElementById('replay-history-overlay').style.display = 'none';
+}
+
+function replayMyPastGame(dateKey) {
+    const stats = JSON.parse(localStorage.getItem('israeleStats')) || { history: {} };
+    const h = stats.history[dateKey];
+    if (h && h.guessesToday) {
+        closeReplayHistoryModal();
+        const user = getUserProfile();
+        replayGame(user.name || "אני", h.guessesToday, dateKey);
+    }
+}
+
+async function openAnonModal() {
+    const todayKey = getDailyKey();
+    const now = getServerNow();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    
+    try {
+        const snap = await db.ref('anonymous_plays').once('value');
+        const data = snap.val() || {};
+        const plays = Object.values(data);
+        
+        const countToday = plays.filter(p => p.dateKey === todayKey).length;
+        const countWeek = plays.filter(p => now - p.timestamp <= weekMs).length;
+        const countAll = plays.length;
+
+        document.getElementById('anon-count-today').innerText = countToday;
+        document.getElementById('anon-count-week').innerText = countWeek;
+        document.getElementById('anon-count-all').innerText = countAll;
+    } catch(e) {}
+    
+    document.getElementById('anon-modal-overlay').style.display = 'flex';
+}
+
+function closeAnonModal() {
+    document.getElementById('anon-modal-overlay').style.display = 'none';
 }
 
 async function renderRealLeaderboard() {
@@ -1224,7 +1468,8 @@ async function renderRealLeaderboard() {
             return;
         }
 
-        let records = Object.values(data);
+        let rawEntries = Object.entries(data);
+        let records = rawEntries.map(([key, val]) => ({ ...val, dbKey: key }));
         const now = Date.now();
         const todayKey = getDailyKey();
 
@@ -1241,12 +1486,18 @@ async function renderRealLeaderboard() {
                 return;
             }
 
-            container.innerHTML = '';
+            container.innerHTML = `
+                <button class="btn-main" style="background:#8e44ad; margin-bottom:12px;" onclick="replayFirstPlayerToday()">
+                    🎬 צפה במשחק של הראשון היום
+                </button>
+            `;
             const currentUser = getUserProfile();
 
             records.slice(0, 50).forEach((rec, index) => {
                 const isMe = rec.name === currentUser.name && rec.location === currentUser.location;
                 const badge = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤';
+
+                const replayBtnHtml = rec.guessesList ? `<button class="btn-replay-card" onclick="replayGame('${rec.name}', ${JSON.stringify(rec.guessesList).replace(/"/g, '&quot;')}, '${rec.dateKey}')">צפה במשחק 👁️</button>` : '';
 
                 container.innerHTML += `
                     <div class="dopamine-card ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}">
@@ -1255,14 +1506,14 @@ async function renderRealLeaderboard() {
                             <div class="card-name">${rec.name} ${isMe ? '<span class="me-tag">אתה</span>' : ''}</div>
                             <div class="card-location">📍 ${rec.location}</div>
                         </div>
-                        <div>
+                        <div style="text-align:left;">
                             <div class="card-stat">${rec.won ? rec.guesses + ' ניחושים' : '🏳️ ויתר/ה'}</div>
+                            ${replayBtnHtml}
                         </div>
                     </div>
                 `;
             });
         } else {
-            // 'week' or 'alltime'
             if (currentLeaderboardFilter === 'week') {
                 const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
                 records = records.filter(r => now - r.timestamp <= sevenDaysMs);
@@ -1273,7 +1524,6 @@ async function renderRealLeaderboard() {
                 return;
             }
 
-            // Aggregate statistics per unique user
             const userStats = {};
             records.forEach(rec => {
                 const userKey = `${rec.name.trim()}__${rec.location.trim()}`;
@@ -1282,13 +1532,16 @@ async function renderRealLeaderboard() {
                         name: rec.name,
                         location: rec.location,
                         totalGames: 0,
-                        totalTries: 0
+                        totalTries: 0,
+                        latestRecord: rec
                     };
                 }
                 userStats[userKey].totalGames += 1;
-                // If the player gave up (won === false), count as 10 tries
                 const effectiveTries = rec.won ? rec.guesses : 10;
                 userStats[userKey].totalTries += effectiveTries;
+                if (rec.timestamp > userStats[userKey].latestRecord.timestamp) {
+                    userStats[userKey].latestRecord = rec;
+                }
             });
 
             let userList = Object.values(userStats).map(u => ({
@@ -1296,7 +1549,6 @@ async function renderRealLeaderboard() {
                 avgGuesses: u.totalTries / u.totalGames
             }));
 
-            // Sort ascending by average tries; tiebreak by most games played
             userList.sort((a, b) => {
                 if (a.avgGuesses !== b.avgGuesses) {
                     return a.avgGuesses - b.avgGuesses;
@@ -1312,6 +1564,9 @@ async function renderRealLeaderboard() {
                 const badge = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤';
                 const avgStr = (user.avgGuesses % 1 === 0) ? user.avgGuesses.toFixed(0) : user.avgGuesses.toFixed(1);
 
+                const rec = user.latestRecord;
+                const replayBtnHtml = rec && rec.guessesList ? `<button class="btn-replay-card" onclick="replayGame('${rec.name}', ${JSON.stringify(rec.guessesList).replace(/"/g, '&quot;')}, '${rec.dateKey}')">משחק אחרון 👁️</button>` : '';
+
                 container.innerHTML += `
                     <div class="dopamine-card ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}">
                         <div class="medal-badge">${badge}</div>
@@ -1319,8 +1574,9 @@ async function renderRealLeaderboard() {
                             <div class="card-name">${user.name} ${isMe ? '<span class="me-tag">אתה</span>' : ''}</div>
                             <div class="card-location">📍 ${user.location} • ${user.totalGames} משחקים</div>
                         </div>
-                        <div>
+                        <div style="text-align:left;">
                             <div class="card-stat">${avgStr} ממוצע ניחושים</div>
+                            ${replayBtnHtml}
                         </div>
                     </div>
                 `;
@@ -1405,7 +1661,7 @@ function endGame(win, remaining, alreadyProcessed = false) {
             }
         }
         localStorage.setItem('israeleStats', JSON.stringify(stats));
-        scoreToSubmit = { win: win, guesses: 10 - remaining };
+        scoreToSubmit = { win: win, guesses: 10 - remaining, guessesList: stats.history[today].guessesToday };
     }
     
     const usedHintsCount = (unlockedClues.closestNeighborUsed ? 1 : 0) + (unlockedClues.fiveOptionsUsed ? 1 : 0);
@@ -1425,16 +1681,13 @@ function endGame(win, remaining, alreadyProcessed = false) {
          map.flyTo([target.lat, target.lon], 12, { paddingTopLeft: sidebarPadding });
     }
 
-    // Always show the daily settlement (win/lose + stats) first.
     document.getElementById('leaderboard-toggle').classList.add('visible');
     showVictoryOverlay();
 
     const user = getUserProfile();
     if (scoreToSubmit && user.name && !user.anonymous) {
-        sendScoreToBackend(scoreToSubmit.win, scoreToSubmit.guesses);
+        sendScoreToBackend(scoreToSubmit.win, scoreToSubmit.guesses, scoreToSubmit.guessesList);
     } else if (scoreToSubmit && !user.name && !user.anonymous) {
-        // First-ever finish with no profile decision yet: let them see the result first,
-        // then invite them to join the leaderboard (or stay anonymous).
         pendingScore = scoreToSubmit;
         setTimeout(() => {
             document.getElementById('user-profile-overlay').style.display = 'flex';
@@ -1717,7 +1970,7 @@ function closeSettings() {
 
     if (isRealChange) {
         const ok = changeUserProfile(name || current.name, location || current.location);
-        if (!ok) return; // cooldown alert already shown; keep the settings panel open
+        if (!ok) return;
     }
     document.getElementById('settings-overlay').style.display = 'none';
 }
@@ -1739,7 +1992,7 @@ function applySavedMarkerScale() {
 applySavedMarkerScale();
 window.onload = async function() {
     await initServerTime();
-    resetLeaderboardIfNeeded(); // fire-and-forget, guarded so it only ever runs once
+    resetLeaderboardIfNeeded();
     loadData();
 };
 </script>
