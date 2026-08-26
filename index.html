@@ -606,7 +606,7 @@ const extraExclusions = [
 ];
 
 const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31.5, 34.8], 8);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_27e0_1_3e832d3d600a658b876e395c').addTo(map);
 
 let touchStartY = 0;
 let currentTranslateY = 0;
