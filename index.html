@@ -1534,7 +1534,7 @@ document.addEventListener('click', function(e) {
     }
 });
 function openGmailContact() {
-    window.open('https://mail.google.com/mail/?view=cm&fs=1&to=isramaster.com@gmail.com', '_blank');
+    window.location.href = 'mailto:isramaster.com@gmail.com';
 }
 function showConfirm() { if(!isGameOver) document.getElementById('confirm-overlay').style.display = 'flex'; }
 function closeConfirm() { document.getElementById('confirm-overlay').style.display = 'none'; }
