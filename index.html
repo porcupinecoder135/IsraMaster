@@ -239,6 +239,7 @@
         .info-popover-row {
             display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700;
             color: var(--primary); cursor: pointer; padding: 8px; border-radius: 8px;
+            text-decoration: none;
         }
         .info-popover-row:hover { background: #f5f7fa; }
         .info-popover-label { font-size: 10.5px; color: #888; font-weight: 700; padding: 4px 8px 0; }
@@ -481,9 +482,9 @@
         <button id="info-corner-btn" class="info-corner-btn" onclick="toggleInfoPopover(event)" title="פרטי יצירת קשר">ℹ️</button>
         <div id="info-popover" class="info-popover">
             <div class="info-popover-label">📬 יצירת קשר</div>
-            <div class="info-popover-row" onclick="openGmailContact()">
+            <a class="info-popover-row" href="mailto:isramaster.com@gmail.com">
                 <span>📧</span><span>isramaster.com@gmail.com</span>
-            </div>
+            </a>
         </div>
         <h2 id="vic-title"></h2>
         <p id="vic-msg"></p>
@@ -1533,9 +1534,6 @@ document.addEventListener('click', function(e) {
         popover.classList.remove('visible');
     }
 });
-function openGmailContact() {
-    window.location.href = 'mailto:isramaster.com@gmail.com';
-}
 function showConfirm() { if(!isGameOver) document.getElementById('confirm-overlay').style.display = 'flex'; }
 function closeConfirm() { document.getElementById('confirm-overlay').style.display = 'none'; }
 
