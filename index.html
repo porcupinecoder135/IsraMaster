@@ -223,6 +223,26 @@
             line-height: 1.35;
         }
 
+        .info-corner-btn {
+            position: absolute; top: 12px; left: 12px; width: 30px; height: 30px;
+            border-radius: 50%; border: none; background: #eef2f5; color: var(--primary);
+            font-size: 15px; font-weight: 900; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; z-index: 5; padding: 0;
+        }
+        .info-corner-btn:active { transform: scale(0.95); }
+        .info-popover {
+            display: none; position: absolute; top: 48px; left: 12px; background: white;
+            border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); border: 1px solid #eef2f5;
+            padding: 8px; z-index: 10; min-width: 230px; text-align: right;
+        }
+        .info-popover.visible { display: block; }
+        .info-popover-row {
+            display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700;
+            color: var(--primary); cursor: pointer; padding: 8px; border-radius: 8px;
+        }
+        .info-popover-row:hover { background: #f5f7fa; }
+        .info-popover-label { font-size: 10.5px; color: #888; font-weight: 700; padding: 4px 8px 0; }
+
         .leaderboard-section { text-align: right; }
         .dopamine-card {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
@@ -457,7 +477,14 @@
 <div id="map"></div>
 
 <div id="victory-overlay" style="display:none;">
-    <div class="modal" style="max-width: 440px; width: 90%;">
+    <div class="modal" style="max-width: 440px; width: 90%; position: relative;">
+        <button id="info-corner-btn" class="info-corner-btn" onclick="toggleInfoPopover(event)" title="פרטי יצירת קשר">ℹ️</button>
+        <div id="info-popover" class="info-popover">
+            <div class="info-popover-label">📬 יצירת קשר</div>
+            <div class="info-popover-row" onclick="openGmailContact()">
+                <span>📧</span><span>isramaster.com@gmail.com</span>
+            </div>
+        </div>
         <h2 id="vic-title"></h2>
         <p id="vic-msg"></p>
         
@@ -1490,6 +1517,24 @@ function showVictoryOverlay() {
 function hideOverlay() {
     document.getElementById('victory-overlay').style.display = 'none';
     if (nextGameCountdownInterval) { clearInterval(nextGameCountdownInterval); nextGameCountdownInterval = null; }
+    const popover = document.getElementById('info-popover');
+    if (popover) popover.classList.remove('visible');
+}
+
+// Small "contact info" popover in the corner of the end screen.
+function toggleInfoPopover(e) {
+    if (e) e.stopPropagation();
+    document.getElementById('info-popover').classList.toggle('visible');
+}
+document.addEventListener('click', function(e) {
+    const popover = document.getElementById('info-popover');
+    const btn = document.getElementById('info-corner-btn');
+    if (popover && popover.classList.contains('visible') && !popover.contains(e.target) && e.target !== btn) {
+        popover.classList.remove('visible');
+    }
+});
+function openGmailContact() {
+    window.open('https://mail.google.com/mail/?view=cm&fs=1&to=isramaster.com@gmail.com', '_blank');
 }
 function showConfirm() { if(!isGameOver) document.getElementById('confirm-overlay').style.display = 'flex'; }
 function closeConfirm() { document.getElementById('confirm-overlay').style.display = 'none'; }
