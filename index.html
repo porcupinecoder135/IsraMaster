@@ -128,9 +128,9 @@
             border-radius: 15px; margin-top: 15px; min-height: 90px;
         }
 
-        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #tutorial-intro-overlay, #settings-overlay, #user-profile-overlay, #info-contact-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
+        #setup-overlay, #how-to-play-overlay, #victory-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #tutorial-intro-overlay, #settings-overlay, #user-profile-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; backdrop-filter: blur(8px); }
         #setup-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); }
-        #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #settings-overlay, #user-profile-overlay, #info-contact-overlay { background: rgba(0,0,0,0.85); display: none; }
+        #how-to-play-overlay, #confirm-overlay, #clue-modal-overlay, #clues-box-overlay, #warning-modal-overlay, #settings-overlay, #user-profile-overlay { background: rgba(0,0,0,0.85); display: none; }
 
         #tutorial-intro-overlay { background: radial-gradient(circle at center, #1a2a6c, #000); z-index: 3200; display: none; }
         .tutorial-modal {
@@ -180,18 +180,8 @@
         .spotlight-tooltip .tutorial-text { font-size: 16.5px; margin: 0 0 12px 0; }
         .spotlight-tooltip .tutorial-dots { margin: 8px 0 14px 0; }
         
-        .modal { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 380px; color: #333; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto; box-sizing: border-box; position: relative; }
+        .modal { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 380px; color: #333; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
         
-        .info-btn {
-            position: absolute; top: 15px; right: 15px; width: 28px; height: 28px;
-            background: #eef2f5; border: 1px solid #cbd5e1; border-radius: 50%;
-            color: var(--primary); font-weight: bold; font-size: 14px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-family: serif; font-style: italic;
-            transition: all 0.2s ease;
-        }
-        .info-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
-
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 15px 0; }
         .stat-val { font-size: 18px; font-weight: 900; color: var(--primary); display: block; }
         .stat-lbl { font-size: 11px; color: #777; line-height: 1.2; font-weight: bold; }
@@ -436,18 +426,6 @@
         <button class="btn-main" style="margin-top:20px;" onclick="closeSettings()">שמירה וסגירה ✅</button>
     </div>
 </div>
-<div id="info-contact-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center;">
-    <div class="modal" style="max-width: 350px; width: 100%;">
-        <h3 style="margin-top:0; color: var(--primary);">📧 צרו קשר</h3>
-        <p style="font-size:14px; color:#555; line-height:1.5; margin-bottom: 20px;">יש לכם שאלות, הצעות או דיווח על תקלה? נשמח לשמוע מכם!</p>
-        
-        <a href="mailto:isramaster.com@gmail.com" target="_blank" class="btn-main" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box;">
-            <i class="fa-solid fa-envelope"></i> isramaster.com@gmail.com
-        </a>
-        
-        <button class="btn-main btn-secondary" style="margin-top:10px; width: 100%; box-sizing: border-box;" onclick="toggleContactInfo(false)">סגירה</button>
-    </div>
-</div>
 
 <button id="mobile-toggle" onclick="toggleSidebar(true)">ניחוש 📊</button>
 <button id="settings-toggle" onclick="openSettings()" title="הגדרות תצוגה">⚙️</button>
@@ -480,8 +458,7 @@
 
 <div id="victory-overlay" style="display:none;">
     <div class="modal" style="max-width: 440px; width: 90%;">
-        <button class="info-btn" onclick="toggleContactInfo(true)" title="מידע וצור קשר">i</button>
-        <h2 id="vic-title" style="margin-top: 10px;"></h2>
+        <h2 id="vic-title"></h2>
         <p id="vic-msg"></p>
         
         <div id="hints-count-summary" class="used-hints-summary"></div>
@@ -512,7 +489,7 @@
             <button class="btn-share btn-instagram" onclick="shareGame('instagram')">Instagram 📸</button>
         </div>
 
-        <button class="btn-main" style="background: var(--dark); margin-top: 15px;" onclick="hideOverlay()">פתיחת מפה 🗺️</button>
+        <button class="btn-main" style="background: var(--dark); margin-top: 15px;" onclick="hideOverlay()">סגירת מפה 🗺️</button>
         <div id="next-game-countdown" class="next-game-countdown">⏳ טוען...</div>
     </div>
 </div>
@@ -1367,7 +1344,7 @@ function shareGame(platform) {
         resultEmojis = "🏳️ לא הצלחתי היום...";
     }
     
-    const textToShare = `IsraMaster האתגר היומי #יעד_${day}\n${resultEmojis}\n🛰️ ניסיונות: ${finalGuesses}/10\n🔮 רמזים שנוצלו: ${usedHintsCount}/2\n\nבואו לנסות גם אתם ב- isramaster.com! 🗺️✨`;
+    const textToShare = `IsraMaster האתגר היומי #יעד_${day}\n${resultEmojis}\n🛰️ ניסיונות: ${finalGuesses}/10\n🔮 רמזים שנוצלו: ${usedHintsCount}/2\n\nבואו לנסות גם אתם ב-isramaster.com! 🗺️✨`;
     
     if (platform === 'whatsapp') {
         const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`;
@@ -1463,10 +1440,6 @@ function endGame(win, remaining, alreadyProcessed = false) {
             document.getElementById('user-profile-overlay').style.display = 'flex';
         }, 4000);
     }
-}
-
-function toggleContactInfo(show) {
-    document.getElementById('info-contact-overlay').style.display = show ? 'flex' : 'none';
 }
 
 function toggleSidebar(forceOpen) {
