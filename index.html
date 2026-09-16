@@ -520,7 +520,7 @@
             <button class="btn-share btn-instagram" onclick="shareGame('instagram')">Instagram 📸</button>
         </div>
 
-        <button class="btn-main" style="background: var(--dark); margin-top: 15px;" onclick="hideOverlay()">סגירת מפה 🗺️</button>
+        <button class="btn-main" style="background: var(--dark); margin-top: 15px;" onclick="hideOverlay()">פתיחת מפה 🗺️</button>
         <div id="next-game-countdown" class="next-game-countdown">⏳ טוען...</div>
     </div>
 </div>
@@ -1392,7 +1392,7 @@ function shareGame(platform) {
 
     const recap = buildGameRecap();
 
-    const textToShare = `IsraMaster האתגר היומי #יעד_${day}\n${recap.lines.join('\n')}\n\n🛰️ ניסיונות: ${finalGuesses}/10\n🔮 רמזים שנוצלו: ${usedHintsCount}/2\n\nבואו לנסות גם אתם ב-isramaster.com! 🗺️✨`;
+    const textToShare = `IsraMaster האתגר היומי #יעד_${day}\n${recap.lines.join('\n')}\n\n🛰️ ניסיונות: ${finalGuesses}/10\n🔮 רמזים שנוצלו: ${usedHintsCount}/2\n\nבואו לנסות גם אתם ב- isramaster.com! 🗺️✨`;
 
     if (platform === 'whatsapp') {
         const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`;
